@@ -2,7 +2,7 @@
 import React from 'react';
 import Sidebar from './Sidebar';
 import Header from './Header';
-import { toast } from '@/components/ui/sonner';
+import { toast } from 'sonner';
 
 interface AppLayoutProps {
   children: React.ReactNode;
