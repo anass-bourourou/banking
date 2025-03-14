@@ -6,9 +6,10 @@ import { toast } from 'sonner';
 
 interface AppLayoutProps {
   children: React.ReactNode;
+  showWelcomeMessage?: boolean;
 }
 
-const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
+const AppLayout: React.FC<AppLayoutProps> = ({ children, showWelcomeMessage = true }) => {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
 
   const toggleSidebar = () => {
@@ -16,13 +17,21 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children }) => {
   };
 
   React.useEffect(() => {
-    // Welcome notification on first load
-    setTimeout(() => {
-      toast.success('Bienvenue sur BankWise', {
-        description: 'Votre application bancaire personnelle',
-      });
-    }, 1000);
-  }, []);
+    // Welcome notification on first load, only if enabled
+    if (showWelcomeMessage) {
+      const hasShownWelcome = sessionStorage.getItem('hasShownWelcome');
+      
+      if (!hasShownWelcome) {
+        setTimeout(() => {
+          toast.success('Bienvenue sur BankWise', {
+            description: 'Votre application bancaire personnelle',
+            duration: 4000,
+          });
+          sessionStorage.setItem('hasShownWelcome', 'true');
+        }, 1000);
+      }
+    }
+  }, [showWelcomeMessage]);
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bank-light">
