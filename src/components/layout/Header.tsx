@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Bell, User, Settings, LogOut } from 'lucide-react';
+import { Bell, User, Settings, LogOut, Menu } from 'lucide-react';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -12,7 +12,12 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-const Header = () => {
+interface HeaderProps {
+  toggleSidebar?: () => void;
+  sidebarOpen?: boolean;
+}
+
+const Header: React.FC<HeaderProps> = ({ toggleSidebar, sidebarOpen }) => {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
@@ -25,23 +30,11 @@ const Header = () => {
   return (
     <header className="fixed left-0 right-0 top-0 z-10 flex h-16 items-center justify-between border-b border-bank-gray-light bg-white px-4 py-3 md:left-64 md:px-8">
       <div className="flex items-center md:hidden">
-        <button className="mr-4 rounded-full p-2 hover:bg-bank-gray-light">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            width="24"
-            height="24"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            className="lucide lucide-menu"
-          >
-            <line x1="4" x2="20" y1="12" y2="12"></line>
-            <line x1="4" x2="20" y1="6" y2="6"></line>
-            <line x1="4" x2="20" y1="18" y2="18"></line>
-          </svg>
+        <button 
+          className="mr-4 rounded-full p-2 hover:bg-bank-gray-light"
+          onClick={toggleSidebar}
+        >
+          <Menu size={24} />
         </button>
         <span className="text-lg font-semibold text-bank-primary">BankWise</span>
       </div>
