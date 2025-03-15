@@ -1,56 +1,84 @@
 
 import React from 'react';
-import { Bell, Menu, Search, User } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Bell, User, Settings, LogOut } from 'lucide-react';
+import { 
+  DropdownMenu, 
+  DropdownMenuContent, 
+  DropdownMenuItem, 
+  DropdownMenuSeparator, 
+  DropdownMenuTrigger 
+} from '@/components/ui/dropdown-menu';
+import { useAuth } from '@/contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
-interface HeaderProps {
-  toggleSidebar: () => void;
-  sidebarOpen: boolean;
-}
+const Header = () => {
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
-const Header: React.FC<HeaderProps> = ({ toggleSidebar, sidebarOpen }) => {
+  const handleLogout = () => {
+    logout();
+    toast.success('Déconnexion réussie');
+    navigate('/login');
+  };
+
   return (
-    <header className="sticky top-0 z-10 flex h-16 items-center border-b border-bank-gray-light bg-white/80 backdrop-blur-sm">
-      <div className="flex w-full items-center justify-between px-4">
-        <div className="flex items-center space-x-4">
-          <button
-            onClick={toggleSidebar}
-            className="rounded-lg p-2 text-bank-dark hover:bg-bank-gray-light"
+    <header className="fixed left-0 right-0 top-0 z-10 flex h-16 items-center justify-between border-b border-bank-gray-light bg-white px-4 py-3 md:left-64 md:px-8">
+      <div className="flex items-center md:hidden">
+        <button className="mr-4 rounded-full p-2 hover:bg-bank-gray-light">
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="24"
+            height="24"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            className="lucide lucide-menu"
           >
-            <Menu size={20} />
-          </button>
-          
-          <div className="relative hidden md:flex">
-            <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-              <Search size={16} className="text-bank-gray" />
-            </div>
-            <input
-              type="text"
-              placeholder="Rechercher..."
-              className="h-10 w-64 rounded-lg border-0 bg-bank-gray-light pl-10 pr-4 text-sm text-bank-dark focus:outline-none focus:ring-1 focus:ring-bank-primary"
-            />
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-4">
-          <button className="relative rounded-lg p-2 text-bank-dark hover:bg-bank-gray-light">
-            <Bell size={20} />
-            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-bank-primary text-xs font-medium text-white">
-              3
-            </span>
-          </button>
-          
-          <div className="relative">
-            <button className="flex items-center space-x-2 rounded-full text-bank-dark hover:bg-bank-gray-light">
-              <div className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-bank-primary/10">
-                <User size={18} className="text-bank-primary" />
+            <line x1="4" x2="20" y1="12" y2="12"></line>
+            <line x1="4" x2="20" y1="6" y2="6"></line>
+            <line x1="4" x2="20" y1="18" y2="18"></line>
+          </svg>
+        </button>
+        <span className="text-lg font-semibold text-bank-primary">BankWise</span>
+      </div>
+      
+      <div className="ml-auto flex items-center space-x-4">
+        <button className="relative rounded-full p-2 hover:bg-bank-gray-light">
+          <Bell size={20} />
+          <span className="absolute right-1 top-1 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs text-white">
+            3
+          </span>
+        </button>
+        
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <button className="flex items-center space-x-3 rounded-full p-2 hover:bg-bank-gray-light">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-bank-primary text-white">
+                <User size={16} />
               </div>
-              <span className="hidden font-medium md:inline-block">
-                Jean Dupont
-              </span>
+              <span className="hidden font-medium md:block">{user?.name || 'Jean Dupont'}</span>
             </button>
-          </div>
-        </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuItem className="cursor-pointer">
+              <User className="mr-2 h-4 w-4" />
+              <span>Mon profil</span>
+            </DropdownMenuItem>
+            <DropdownMenuItem className="cursor-pointer" onClick={() => navigate('/settings')}>
+              <Settings className="mr-2 h-4 w-4" />
+              <span>Paramètres</span>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem className="cursor-pointer text-red-500 focus:text-red-500" onClick={handleLogout}>
+              <LogOut className="mr-2 h-4 w-4" />
+              <span>Déconnexion</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

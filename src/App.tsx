@@ -3,8 +3,12 @@ import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ProtectedRoute from "@/components/auth/ProtectedRoute";
+
 import Index from "./pages/Index";
+import Login from "./pages/Login";
 import Accounts from "./pages/Accounts";
 import Transfers from "./pages/Transfers";
 import Beneficiaries from "./pages/Beneficiaries";
@@ -18,23 +22,67 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/accounts" element={<Accounts />} />
-          <Route path="/transfers" element={<Transfers />} />
-          <Route path="/beneficiaries" element={<Beneficiaries />} />
-          <Route path="/payments" element={<Payments />} />
-          <Route path="/statements" element={<Statements />} />
-          <Route path="/receipts" element={<Receipts />} />
-          <Route path="/settings" element={<Settings />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+    <AuthProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            
+            <Route path="/" element={
+              <ProtectedRoute>
+                <Index />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/accounts" element={
+              <ProtectedRoute>
+                <Accounts />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/transfers" element={
+              <ProtectedRoute>
+                <Transfers />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/beneficiaries" element={
+              <ProtectedRoute>
+                <Beneficiaries />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/payments" element={
+              <ProtectedRoute>
+                <Payments />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/statements" element={
+              <ProtectedRoute>
+                <Statements />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/receipts" element={
+              <ProtectedRoute>
+                <Receipts />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="/settings" element={
+              <ProtectedRoute>
+                <Settings />
+              </ProtectedRoute>
+            } />
+            
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </AuthProvider>
   </QueryClientProvider>
 );
 

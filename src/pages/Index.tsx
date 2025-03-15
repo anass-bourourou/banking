@@ -5,8 +5,11 @@ import BalanceCard from '@/components/dashboard/BalanceCard';
 import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import SpendingChart from '@/components/dashboard/SpendingChart';
 import QuickActions from '@/components/dashboard/QuickActions';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Index = () => {
+  const { user } = useAuth();
+  
   const spendingData = [
     { name: 'Logement', value: 950, color: '#0F7DEA' },
     { name: 'Alimentation', value: 380, color: '#10B981' },
@@ -16,10 +19,13 @@ const Index = () => {
     { name: 'Autres', value: 290, color: '#6B7280' },
   ];
 
+  // Extract first name for greeting
+  const firstName = user?.name.split(' ')[0] || 'Jean';
+
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold md:text-2xl">Bonjour, Jean</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">Bonjour, {firstName}</h1>
         <p className="text-bank-gray">Bienvenue dans votre espace bancaire</p>
       </div>
 
