@@ -1,6 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
+import { Toaster as Sonner } from "sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
@@ -8,13 +8,11 @@ import Index from "./pages/Index";
 import Accounts from "./pages/Accounts";
 import Transfers from "./pages/Transfers";
 import Beneficiaries from "./pages/Beneficiaries";
+import Payments from "./pages/Payments";
+import Statements from "./pages/Statements";
+import Receipts from "./pages/Receipts";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
-
-// Pages à implémenter ultérieurement
-const Payments = () => <div>Page de paiements à venir</div>;
-const Statements = () => <div>Page de relevés à venir</div>;
-const Receipts = () => <div>Page de reçus à venir</div>;
-const Settings = () => <div>Page de paramètres à venir</div>;
 
 const queryClient = new QueryClient();
 

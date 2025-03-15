@@ -62,9 +62,9 @@ const Accounts = () => {
   ];
 
   const recentTransactions = [
-    { id: 1, description: 'Virement Salaire', amount: 2500.00, type: 'credit', date: '15/09/2023' },
-    { id: 2, description: 'Loyer Appartement', amount: 950.00, type: 'debit', date: '12/09/2023' },
-    { id: 3, description: 'Courses Supermarché', amount: 128.75, type: 'debit', date: '10/09/2023' },
+    { id: 1, description: 'Virement Salaire', amount: 2500.00, type: 'credit' as const, date: '15/09/2023' },
+    { id: 2, description: 'Loyer Appartement', amount: 950.00, type: 'debit' as const, date: '12/09/2023' },
+    { id: 3, description: 'Courses Supermarché', amount: 128.75, type: 'debit' as const, date: '10/09/2023' },
   ];
 
   return (
