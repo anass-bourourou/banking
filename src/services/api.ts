@@ -1,8 +1,13 @@
-
 // Base API service for making HTTP requests
 // This would be expanded in a real application to include more API endpoints
 
 const BASE_URL = 'https://api.example.com'; // Replace with actual API URL in production
+
+// Simulated API delay
+const API_DELAY = 800;
+
+// Helper to simulate API delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   // In a real app, this would add authentication headers
@@ -11,16 +16,70 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     ...(options.headers || {}),
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  // Simulate API delay
+  await delay(API_DELAY);
 
-  if (!response.ok) {
-    throw new Error(`API error: ${response.status}`);
+  // Simulate API response
+  // In a real app, this would be a fetch call
+  console.log(`API call to ${endpoint} with options:`, options);
+  
+  // For demo purposes, we're not making actual HTTP requests
+  // Instead, we're returning mock data based on the endpoint and method
+  return mockApiResponse(endpoint, options.method || 'GET', options.body);
+}
+
+// Mock API response function
+async function mockApiResponse(endpoint: string, method: string, body?: any) {
+  // Parse the body if it's a string
+  let parsedBody = body;
+  if (typeof body === 'string') {
+    try {
+      parsedBody = JSON.parse(body);
+    } catch (e) {
+      // If it's not valid JSON, keep it as is
+      parsedBody = body;
+    }
   }
 
-  return response.json();
+  // Simulate different responses based on endpoint and method
+  if (method === 'GET') {
+    // GET requests
+    if (endpoint.startsWith('/accounts')) {
+      return { json: () => Promise.resolve(api.accounts.getAll()) };
+    } else if (endpoint.startsWith('/transactions')) {
+      return { json: () => Promise.resolve(api.transactions.getRecent()) };
+    } else if (endpoint.startsWith('/beneficiaries')) {
+      return { json: () => Promise.resolve(api.beneficiaries.getAll()) };
+    }
+  } else if (method === 'POST') {
+    // POST requests
+    if (endpoint === '/transfers') {
+      return { 
+        json: () => Promise.resolve({
+          success: true,
+          message: 'Virement effectué avec succès',
+          transferId: `TR-${Date.now()}`
+        })
+      };
+    } else if (endpoint === '/beneficiaries') {
+      return { 
+        json: () => Promise.resolve({
+          success: true,
+          message: 'Bénéficiaire ajouté avec succès',
+          beneficiaryId: `BEN-${Date.now()}`
+        })
+      };
+    }
+  }
+
+  // Default response for unhandled endpoints
+  return { 
+    json: () => Promise.resolve({ 
+      error: 'Endpoint not implemented in mock API',
+      endpoint,
+      method 
+    })
+  };
 }
 
 // Mock API functions
@@ -82,6 +141,10 @@ export const api = {
           ]
         }
       ];
+    },
+    getById: async (id: number) => {
+      const accounts = await api.accounts.getAll();
+      return accounts.find(account => account.id === id) || null;
     }
   },
   
@@ -93,7 +156,32 @@ export const api = {
         { id: 1, description: 'Virement Salaire', amount: 2500.00, type: 'credit', date: '15/09/2023' },
         { id: 2, description: 'Loyer Appartement', amount: 950.00, type: 'debit', date: '12/09/2023' },
         { id: 3, description: 'Courses Supermarché', amount: 128.75, type: 'debit', date: '10/09/2023' },
+        { id: 4, description: 'Restaurant La Brasserie', amount: 68.50, type: 'debit', date: '08/09/2023' },
+        { id: 5, description: 'Remboursement Marie', amount: 45.00, type: 'credit', date: '05/09/2023' },
+        { id: 6, description: 'Facture Électricité', amount: 78.25, type: 'debit', date: '01/09/2023' },
       ];
+    },
+    getByAccountId: async (accountId: number) => {
+      // Mock data - would be replaced with actual API call
+      return [
+        { id: 1, description: 'Virement Salaire', amount: 2500.00, type: 'credit', date: '15/09/2023', account: accountId },
+        { id: 2, description: 'Loyer Appartement', amount: 950.00, type: 'debit', date: '12/09/2023', account: accountId },
+        { id: 3, description: 'Courses Supermarché', amount: 128.75, type: 'debit', date: '10/09/2023', account: accountId },
+      ].filter(transaction => transaction.account === accountId);
+    },
+    createTransfer: async (data: {
+      fromAccount: number;
+      toAccount: number;
+      amount: number;
+      description?: string;
+    }) => {
+      // Mock transfer creation
+      return {
+        id: `TR-${Date.now()}`,
+        date: new Date().toLocaleDateString('fr-FR'),
+        status: 'completed',
+        ...data
+      };
     }
   },
   
@@ -125,6 +213,39 @@ export const api = {
           phone: '07 65 43 21 09',
         },
       ];
+    },
+    create: async (beneficiary: {
+      name: string;
+      iban: string;
+      bic?: string;
+      email?: string;
+      phone?: string;
+    }) => {
+      // Mock beneficiary creation
+      return {
+        id: `BEN-${Date.now()}`,
+        ...beneficiary
+      };
+    }
+  },
+  
+  // User profile
+  user: {
+    updateProfile: async (data: {
+      name?: string;
+      email?: string;
+      phone?: string;
+      address?: string;
+    }) => {
+      // Mock user update
+      return {
+        id: 'usr_123456789',
+        name: data.name || 'Jean Dupont',
+        email: data.email || 'jean.dupont@example.com',
+        phone: data.phone || '06 12 34 56 78',
+        address: data.address || '123 Rue de Paris, 75001 Paris',
+        updatedAt: new Date().toISOString()
+      };
     }
   }
 };

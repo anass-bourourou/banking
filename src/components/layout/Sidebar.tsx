@@ -44,10 +44,15 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
     return location.pathname === path;
   };
 
-  const handleLogout = () => {
-    logout();
-    toast.success('Déconnexion réussie');
-    navigate('/login');
+  const handleLogout = async () => {
+    try {
+      await logout();
+      toast.success('Déconnexion réussie');
+      navigate('/login');
+    } catch (error) {
+      toast.error('Erreur lors de la déconnexion');
+      console.error('Logout error:', error);
+    }
   };
 
   return (

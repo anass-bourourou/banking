@@ -6,42 +6,30 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
+  const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    // For demo purposes, we'll use a mock login
-    // In a real app, this would connect to a backend API
-    setTimeout(() => {
-      // Mock successful login with demo credentials
-      if (username === 'demo' && password === 'password') {
-        // Store authentication state
-        localStorage.setItem('isAuthenticated', 'true');
-        localStorage.setItem('user', JSON.stringify({
-          name: 'Jean Dupont',
-          email: 'jean.dupont@example.com'
-        }));
-        
-        toast.success('Connexion réussie', {
-          description: 'Bienvenue dans votre espace bancaire'
-        });
-        
-        navigate('/');
-      } else {
-        toast.error('Échec de la connexion', {
-          description: 'Identifiants incorrects, veuillez réessayer'
-        });
-      }
+    try {
+      await login({ username, password });
       
-      setIsLoading(false);
-    }, 1500);
+      toast.success('Connexion réussie', {
+        description: 'Bienvenue dans votre espace bancaire'
+      });
+      
+      navigate('/');
+    } catch (error) {
+      toast.error('Échec de la connexion', {
+        description: error instanceof Error ? error.message : 'Identifiants incorrects, veuillez réessayer'
+      });
+    }
   };
 
   return (
