@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Home, 
   CreditCard, 
@@ -10,10 +10,16 @@ import {
   Receipt, 
   Settings, 
   LogOut, 
-  Menu, 
-  X,
   DollarSign
 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { toast } from 'sonner';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface SidebarProps {
   open: boolean;
@@ -21,6 +27,8 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ open }) => {
   const location = useLocation();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
   
   const menuItems = [
     { icon: Home, label: 'Tableau de bord', path: '/' },
@@ -34,6 +42,12 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
 
   const isActive = (path: string) => {
     return location.pathname === path;
+  };
+
+  const handleLogout = () => {
+    logout();
+    toast.success('Déconnexion réussie');
+    navigate('/login');
   };
 
   return (
@@ -61,39 +75,75 @@ const Sidebar: React.FC<SidebarProps> = ({ open }) => {
 
       <div className="flex-1 overflow-auto py-4">
         <nav className="space-y-1 px-2">
-          {menuItems.map((item) => (
-            <Link
-              key={item.path}
-              to={item.path}
-              className={`group flex items-center rounded-xl p-3 transition-all duration-200 ease-in-out ${
-                isActive(item.path)
-                  ? 'bg-bank-primary text-white'
-                  : 'text-bank-gray-dark hover:bg-bank-gray-light'
-              }`}
-            >
-              <item.icon size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
-              {open && <span className="font-medium">{item.label}</span>}
-            </Link>
-          ))}
+          <TooltipProvider>
+            {menuItems.map((item) => (
+              <Tooltip key={item.path}>
+                <TooltipTrigger asChild>
+                  <Link
+                    to={item.path}
+                    className={`group flex items-center rounded-xl p-3 transition-all duration-200 ease-in-out ${
+                      isActive(item.path)
+                        ? 'bg-bank-primary text-white'
+                        : 'text-bank-gray-dark hover:bg-bank-gray-light'
+                    }`}
+                  >
+                    <item.icon size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
+                    {open && <span className="font-medium">{item.label}</span>}
+                  </Link>
+                </TooltipTrigger>
+                {!open && (
+                  <TooltipContent side="right">
+                    {item.label}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+            ))}
+          </TooltipProvider>
         </nav>
       </div>
 
       <div className="border-t border-bank-gray-light p-4">
-        <Link 
-          to="/settings" 
-          className={`flex items-center rounded-xl p-3 transition-all duration-200 ease-in-out ${
-            isActive('/settings') 
-              ? 'bg-bank-primary text-white' 
-              : 'text-bank-gray-dark hover:bg-bank-gray-light'
-          }`}
-        >
-          <Settings size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
-          {open && <span className="font-medium">Paramètres</span>}
-        </Link>
-        <button className={`mt-2 flex w-full items-center rounded-xl p-3 text-bank-gray-dark transition-all duration-200 ease-in-out hover:bg-bank-gray-light`}>
-          <LogOut size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
-          {open && <span className="font-medium">Déconnexion</span>}
-        </button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Link 
+                to="/settings" 
+                className={`flex items-center rounded-xl p-3 transition-all duration-200 ease-in-out ${
+                  isActive('/settings') 
+                    ? 'bg-bank-primary text-white' 
+                    : 'text-bank-gray-dark hover:bg-bank-gray-light'
+                }`}
+              >
+                <Settings size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
+                {open && <span className="font-medium">Paramètres</span>}
+              </Link>
+            </TooltipTrigger>
+            {!open && (
+              <TooltipContent side="right">
+                Paramètres
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
+        
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <button 
+                onClick={handleLogout}
+                className={`mt-2 flex w-full items-center rounded-xl p-3 text-bank-gray-dark transition-all duration-200 ease-in-out hover:bg-bank-gray-light`}
+              >
+                <LogOut size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
+                {open && <span className="font-medium">Déconnexion</span>}
+              </button>
+            </TooltipTrigger>
+            {!open && (
+              <TooltipContent side="right">
+                Déconnexion
+              </TooltipContent>
+            )}
+          </Tooltip>
+        </TooltipProvider>
       </div>
     </aside>
   );
