@@ -38,7 +38,15 @@ export class DataService {
   static async getAccounts(): Promise<Account[]> {
     try {
       const response = await fetchWithAuth('/accounts');
-      return await response.json();
+      const data = await response.json();
+      
+      // Ensure the response matches the Account[] type
+      if (Array.isArray(data) && data.length > 0 && 'balance' in data[0]) {
+        return data as Account[];
+      }
+      
+      console.error('Unexpected response format:', data);
+      throw new Error('Format de réponse inattendu pour les comptes');
     } catch (error) {
       console.error('Error fetching accounts:', error);
       throw new Error('Impossible de récupérer les comptes');
@@ -48,7 +56,18 @@ export class DataService {
   static async getAccountById(id: number): Promise<Account | null> {
     try {
       const response = await fetchWithAuth(`/accounts/${id}`);
-      return await response.json();
+      const data = await response.json();
+      
+      // Ensure the response matches the Account type
+      if (data && 'id' in data && 'balance' in data) {
+        return data as Account;
+      } else if (Array.isArray(data) && data.length > 0) {
+        // If the API returns an array with one account, take the first one
+        const account = data.find(acc => acc.id === id);
+        if (account) return account as Account;
+      }
+      
+      return null;
     } catch (error) {
       console.error(`Error fetching account ${id}:`, error);
       throw new Error('Impossible de récupérer les détails du compte');
@@ -58,7 +77,15 @@ export class DataService {
   static async getRecentTransactions(): Promise<Transaction[]> {
     try {
       const response = await fetchWithAuth('/transactions/recent');
-      return await response.json();
+      const data = await response.json();
+      
+      // Ensure the response matches the Transaction[] type
+      if (Array.isArray(data) && data.length > 0 && 'description' in data[0]) {
+        return data as Transaction[];
+      }
+      
+      console.error('Unexpected response format:', data);
+      throw new Error('Format de réponse inattendu pour les transactions');
     } catch (error) {
       console.error('Error fetching recent transactions:', error);
       throw new Error('Impossible de récupérer les transactions récentes');
@@ -68,7 +95,14 @@ export class DataService {
   static async getTransactionsByAccount(accountId: number): Promise<Transaction[]> {
     try {
       const response = await fetchWithAuth(`/transactions/account/${accountId}`);
-      return await response.json();
+      const data = await response.json();
+      
+      // Ensure the response matches the Transaction[] type
+      if (Array.isArray(data) && data.length > 0 && 'description' in data[0]) {
+        return data as Transaction[];
+      }
+      
+      return []; // Return empty array if no transactions
     } catch (error) {
       console.error(`Error fetching transactions for account ${accountId}:`, error);
       throw new Error('Impossible de récupérer les transactions du compte');
@@ -78,7 +112,14 @@ export class DataService {
   static async getBeneficiaries(): Promise<Beneficiary[]> {
     try {
       const response = await fetchWithAuth('/beneficiaries');
-      return await response.json();
+      const data = await response.json();
+      
+      // Ensure the response matches the Beneficiary[] type
+      if (Array.isArray(data) && data.length > 0 && 'iban' in data[0]) {
+        return data as Beneficiary[];
+      }
+      
+      return []; // Return empty array if no beneficiaries
     } catch (error) {
       console.error('Error fetching beneficiaries:', error);
       throw new Error('Impossible de récupérer les bénéficiaires');
@@ -104,7 +145,15 @@ export class DataService {
         method: 'POST',
         body: JSON.stringify(beneficiary)
       });
-      return await response.json();
+      const data = await response.json();
+      
+      // Ensure the response includes an id
+      if (data && 'id' in data) {
+        return data as Beneficiary;
+      }
+      
+      console.error('Unexpected response format:', data);
+      throw new Error('Format de réponse inattendu');
     } catch (error) {
       console.error('Error adding beneficiary:', error);
       throw new Error('Impossible d\'ajouter le bénéficiaire');

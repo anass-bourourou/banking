@@ -1,5 +1,8 @@
+
 // Base API service for making HTTP requests
 // This would be expanded in a real application to include more API endpoints
+
+import { Account, Transaction, Beneficiary } from './DataService';
 
 const BASE_URL = 'https://api.example.com'; // Replace with actual API URL in production
 
@@ -44,30 +47,30 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
   // Simulate different responses based on endpoint and method
   if (method === 'GET') {
     // GET requests
-    if (endpoint.startsWith('/accounts')) {
+    if (endpoint === '/accounts') {
       return { json: () => Promise.resolve(api.accounts.getAll()) };
-    } else if (endpoint.startsWith('/transactions')) {
+    } else if (endpoint.startsWith('/accounts/')) {
+      const idStr = endpoint.split('/accounts/')[1];
+      const id = parseInt(idStr, 10);
+      return { json: () => Promise.resolve(api.accounts.getById(id)) };
+    } else if (endpoint === '/transactions/recent') {
       return { json: () => Promise.resolve(api.transactions.getRecent()) };
-    } else if (endpoint.startsWith('/beneficiaries')) {
+    } else if (endpoint.startsWith('/transactions/account/')) {
+      const idStr = endpoint.split('/transactions/account/')[1];
+      const id = parseInt(idStr, 10);
+      return { json: () => Promise.resolve(api.transactions.getByAccountId(id)) };
+    } else if (endpoint === '/beneficiaries') {
       return { json: () => Promise.resolve(api.beneficiaries.getAll()) };
     }
   } else if (method === 'POST') {
     // POST requests
     if (endpoint === '/transfers') {
       return { 
-        json: () => Promise.resolve({
-          success: true,
-          message: 'Virement effectué avec succès',
-          transferId: `TR-${Date.now()}`
-        })
+        json: () => Promise.resolve(api.transactions.createTransfer(parsedBody))
       };
     } else if (endpoint === '/beneficiaries') {
       return { 
-        json: () => Promise.resolve({
-          success: true,
-          message: 'Bénéficiaire ajouté avec succès',
-          beneficiaryId: `BEN-${Date.now()}`
-        })
+        json: () => Promise.resolve(api.beneficiaries.create(parsedBody))
       };
     }
   }
@@ -86,7 +89,7 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
 export const api = {
   // Account related endpoints
   accounts: {
-    getAll: async () => {
+    getAll: (): Account[] => {
       // Mock data - would be replaced with actual API call
       return [
         {
@@ -142,15 +145,15 @@ export const api = {
         }
       ];
     },
-    getById: async (id: number) => {
-      const accounts = await api.accounts.getAll();
+    getById: (id: number): Account | null => {
+      const accounts = api.accounts.getAll();
       return accounts.find(account => account.id === id) || null;
     }
   },
   
   // Transaction related endpoints 
   transactions: {
-    getRecent: async () => {
+    getRecent: (): Transaction[] => {
       // Mock data - would be replaced with actual API call
       return [
         { id: 1, description: 'Virement Salaire', amount: 2500.00, type: 'credit', date: '15/09/2023' },
@@ -161,23 +164,30 @@ export const api = {
         { id: 6, description: 'Facture Électricité', amount: 78.25, type: 'debit', date: '01/09/2023' },
       ];
     },
-    getByAccountId: async (accountId: number) => {
+    getByAccountId: (accountId: number): Transaction[] => {
       // Mock data - would be replaced with actual API call
-      return [
-        { id: 1, description: 'Virement Salaire', amount: 2500.00, type: 'credit', date: '15/09/2023', account: accountId },
-        { id: 2, description: 'Loyer Appartement', amount: 950.00, type: 'debit', date: '12/09/2023', account: accountId },
-        { id: 3, description: 'Courses Supermarché', amount: 128.75, type: 'debit', date: '10/09/2023', account: accountId },
-      ].filter(transaction => transaction.account === accountId);
+      const transactions = [
+        { id: 1, description: 'Virement Salaire', amount: 2500.00, type: 'credit', date: '15/09/2023', accountId: 1 },
+        { id: 2, description: 'Loyer Appartement', amount: 950.00, type: 'debit', date: '12/09/2023', accountId: 1 },
+        { id: 3, description: 'Courses Supermarché', amount: 128.75, type: 'debit', date: '10/09/2023', accountId: 1 },
+        { id: 4, description: 'Intérêts', amount: 125.50, type: 'credit', date: '01/09/2023', accountId: 2 },
+        { id: 5, description: 'Dépôt', amount: 1000.00, type: 'credit', date: '20/08/2023', accountId: 2 },
+        { id: 6, description: 'Dividendes', amount: 78.25, type: 'credit', date: '15/09/2023', accountId: 3 },
+      ].filter(t => t.accountId === accountId)
+       .map(({ accountId, ...rest }) => rest as Transaction);
+      
+      return transactions;
     },
-    createTransfer: async (data: {
+    createTransfer: (data: {
       fromAccount: number;
-      toAccount: number;
+      toAccount: number | string;
       amount: number;
       description?: string;
     }) => {
       // Mock transfer creation
       return {
-        id: `TR-${Date.now()}`,
+        success: true,
+        transferId: `TR-${Date.now()}`,
         date: new Date().toLocaleDateString('fr-FR'),
         status: 'completed',
         ...data
@@ -187,7 +197,7 @@ export const api = {
   
   // Beneficiaries related endpoints
   beneficiaries: {
-    getAll: async () => {
+    getAll: (): Beneficiary[] => {
       // Mock data - would be replaced with actual API call
       return [
         {
@@ -214,13 +224,13 @@ export const api = {
         },
       ];
     },
-    create: async (beneficiary: {
+    create: (beneficiary: {
       name: string;
       iban: string;
       bic?: string;
       email?: string;
       phone?: string;
-    }) => {
+    }): Beneficiary => {
       // Mock beneficiary creation
       return {
         id: `BEN-${Date.now()}`,
