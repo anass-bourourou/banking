@@ -1,6 +1,5 @@
 
-// This is a mock service that simulates authentication API calls
-// In a real application, this would connect to a backend API
+import { supabase, isSupabaseConfigured } from './supabase';
 
 export interface LoginCredentials {
   username: string;
@@ -15,81 +14,161 @@ export interface User {
 }
 
 export class AuthService {
+  private static useSupabase(): boolean {
+    return isSupabaseConfigured();
+  }
+
   static async login(credentials: LoginCredentials): Promise<User> {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (credentials.username === 'demo' && credentials.password === 'password') {
-          const user = {
-            id: 'usr_123456789',
-            name: 'Jean Dupont',
-            email: 'jean.dupont@example.com',
-            lastLogin: new Date().toISOString()
-          };
-          
-          // Store user in localStorage for session persistence
-          localStorage.setItem('isAuthenticated', 'true');
-          localStorage.setItem('user', JSON.stringify(user));
-          
-          resolve(user);
-        } else {
-          reject(new Error('Identifiants invalides. Veuillez réessayer.'));
-        }
-      }, 1000);
-    });
+    if (AuthService.useSupabase()) {
+      try {
+        // Use Supabase authentication
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: credentials.username,
+          password: credentials.password
+        });
+
+        if (error) throw error;
+        if (!data.user) throw new Error('Aucun utilisateur retourné');
+
+        const user: User = {
+          id: data.user.id,
+          name: data.user.user_metadata?.name || 'Utilisateur',
+          email: data.user.email || '',
+          lastLogin: new Date().toISOString()
+        };
+
+        return user;
+      } catch (error) {
+        console.error('Login error:', error);
+        throw new Error('Identifiants invalides. Veuillez réessayer.');
+      }
+    } else {
+      // Simulate API call with mock data
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          if (credentials.username === 'demo' && credentials.password === 'password') {
+            const user = {
+              id: 'usr_123456789',
+              name: 'Jean Dupont',
+              email: 'jean.dupont@example.com',
+              lastLogin: new Date().toISOString()
+            };
+            
+            // Store user in localStorage for session persistence
+            localStorage.setItem('isAuthenticated', 'true');
+            localStorage.setItem('user', JSON.stringify(user));
+            
+            resolve(user);
+          } else {
+            reject(new Error('Identifiants invalides. Veuillez réessayer.'));
+          }
+        }, 1000);
+      });
+    }
   }
 
   static async logout(): Promise<void> {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
+    if (AuthService.useSupabase()) {
       try {
-        setTimeout(() => {
-          // Clear local storage
-          localStorage.removeItem('isAuthenticated');
-          localStorage.removeItem('user');
-          resolve();
-        }, 500);
+        const { error } = await supabase.auth.signOut();
+        if (error) throw error;
       } catch (error) {
-        reject(new Error('Erreur lors de la déconnexion'));
+        console.error('Logout error:', error);
+        throw new Error('Erreur lors de la déconnexion');
       }
-    });
+    } else {
+      // Simulate API call
+      return new Promise((resolve, reject) => {
+        try {
+          setTimeout(() => {
+            // Clear local storage
+            localStorage.removeItem('isAuthenticated');
+            localStorage.removeItem('user');
+            resolve();
+          }, 500);
+        } catch (error) {
+          reject(new Error('Erreur lors de la déconnexion'));
+        }
+      });
+    }
   }
 
   static async checkAuthStatus(): Promise<User | null> {
-    // Simulate checking token validity with API
-    return new Promise((resolve) => {
-      const isAuthenticated = localStorage.getItem('isAuthenticated');
-      const user = localStorage.getItem('user');
-      
-      if (isAuthenticated === 'true' && user) {
-        resolve(JSON.parse(user));
-      } else {
-        resolve(null);
+    if (AuthService.useSupabase()) {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (!session || !session.user) return null;
+
+        return {
+          id: session.user.id,
+          name: session.user.user_metadata?.name || 'Utilisateur',
+          email: session.user.email || '',
+          lastLogin: session.user.last_sign_in_at || ''
+        };
+      } catch (error) {
+        console.error('Auth check error:', error);
+        return null;
       }
-    });
+    } else {
+      // Simulate checking token validity with API
+      return new Promise((resolve) => {
+        const isAuthenticated = localStorage.getItem('isAuthenticated');
+        const user = localStorage.getItem('user');
+        
+        if (isAuthenticated === 'true' && user) {
+          resolve(JSON.parse(user));
+        } else {
+          resolve(null);
+        }
+      });
+    }
   }
   
   static async updateProfile(userData: Partial<User>): Promise<User> {
-    // Simulate API call
-    return new Promise((resolve, reject) => {
+    if (AuthService.useSupabase()) {
       try {
-        setTimeout(() => {
-          const userStr = localStorage.getItem('user');
-          
-          if (!userStr) {
-            reject(new Error('Utilisateur non authentifié'));
-            return;
+        const { data: { user }, error } = await supabase.auth.updateUser({
+          data: {
+            name: userData.name
           }
-          
-          const currentUser = JSON.parse(userStr);
-          const updatedUser = { ...currentUser, ...userData };
-          
-          localStorage.setItem('user', JSON.stringify(updatedUser));
-          resolve(updatedUser);
-        }, 800);
+        });
+
+        if (error) throw error;
+        if (!user) throw new Error('Utilisateur non trouvé');
+
+        return {
+          id: user.id,
+          name: user.user_metadata?.name || 'Utilisateur',
+          email: user.email || '',
+          lastLogin: user.last_sign_in_at || ''
+        };
       } catch (error) {
-        reject(new Error('Erreur lors de la mise à jour du profil'));
+        console.error('Profile update error:', error);
+        throw new Error('Erreur lors de la mise à jour du profil');
       }
-    });
+    } else {
+      // Simulate API call
+      return new Promise((resolve, reject) => {
+        try {
+          setTimeout(() => {
+            const userStr = localStorage.getItem('user');
+            
+            if (!userStr) {
+              reject(new Error('Utilisateur non authentifié'));
+              return;
+            }
+            
+            const currentUser = JSON.parse(userStr);
+            const updatedUser = { ...currentUser, ...userData };
+            
+            localStorage.setItem('user', JSON.stringify(updatedUser));
+            resolve(updatedUser);
+          }, 800);
+        } catch (error) {
+          reject(new Error('Erreur lors de la mise à jour du profil'));
+        }
+      });
+    }
   }
 }
