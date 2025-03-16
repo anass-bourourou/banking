@@ -11,12 +11,18 @@ interface AppLayoutProps {
 
 const AppLayout: React.FC<AppLayoutProps> = ({ children, showWelcomeMessage = true }) => {
   const [sidebarOpen, setSidebarOpen] = React.useState(true);
+  const [isPageLoaded, setIsPageLoaded] = React.useState(false);
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
   };
 
   React.useEffect(() => {
+    // Mark page as loaded after a short delay for smoother transitions
+    const timer = setTimeout(() => {
+      setIsPageLoaded(true);
+    }, 100);
+
     // Welcome notification on first load, only if enabled
     if (showWelcomeMessage) {
       const hasShownWelcome = sessionStorage.getItem('hasShownWelcome');
@@ -31,6 +37,8 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, showWelcomeMessage = tr
         }, 1000);
       }
     }
+
+    return () => clearTimeout(timer);
   }, [showWelcomeMessage]);
 
   return (
@@ -40,8 +48,12 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, showWelcomeMessage = tr
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />
         
-        <main className="flex-1 overflow-auto p-4 md:p-6 animate-fade-in">
-          {children}
+        <main className={`flex-1 overflow-auto p-4 md:p-6 transition-opacity duration-300 ${
+          isPageLoaded ? 'opacity-100' : 'opacity-0'
+        }`}>
+          <div className="animate-fade-in">
+            {children}
+          </div>
         </main>
       </div>
     </div>

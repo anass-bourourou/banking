@@ -1,15 +1,24 @@
 
 import React from 'react';
+import { useQuery } from '@tanstack/react-query';
 import AppLayout from '@/components/layout/AppLayout';
 import BalanceCard from '@/components/dashboard/BalanceCard';
 import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import SpendingChart from '@/components/dashboard/SpendingChart';
 import QuickActions from '@/components/dashboard/QuickActions';
+import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import { useAuth } from '@/contexts/AuthContext';
+import { DataService } from '@/services/DataService';
+import { Loader2 } from 'lucide-react';
 
 const Index = () => {
   const { user } = useAuth();
   
+  const { data: accounts, isLoading: isLoadingAccounts } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: DataService.getAccounts,
+  });
+
   const spendingData = [
     { name: 'Logement', value: 950, color: '#0F7DEA' },
     { name: 'Alimentation', value: 380, color: '#10B981' },
@@ -29,46 +38,50 @@ const Index = () => {
         <p className="text-bank-gray">Bienvenue dans votre espace bancaire</p>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-        <BalanceCard
-          accountType="Compte Courant"
-          accountNumber="5482 7589 1234 5678"
-          balance={4850.75}
-          change={{
-            amount: 250.0,
-            percentage: 5.4,
-            increase: true,
-          }}
-        />
-        <BalanceCard
-          accountType="Compte Épargne"
-          accountNumber="5482 7589 9876 5432"
-          balance={12350.20}
-          change={{
-            amount: 350.0,
-            percentage: 2.9,
-            increase: true,
-          }}
-        />
-        <BalanceCard
-          accountType="Compte Investissement"
-          accountNumber="5482 7589 4567 8901"
-          balance={8760.50}
-          change={{
-            amount: 120.0,
-            percentage: 1.4,
-            increase: false,
-          }}
-        />
-      </div>
+      {isLoadingAccounts ? (
+        <div className="flex h-40 w-full items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-bank-primary" />
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+          {accounts?.map((account) => (
+            <BalanceCard
+              key={account.id}
+              accountType={account.name}
+              accountNumber={account.number}
+              balance={account.balance}
+              currency="€"
+              change={{
+                amount: account.history.length > 1 
+                  ? account.balance - account.history[account.history.length - 2].amount 
+                  : 0,
+                percentage: account.history.length > 1 
+                  ? parseFloat(((account.balance - account.history[account.history.length - 2].amount) / account.history[account.history.length - 2].amount * 100).toFixed(1))
+                  : 0,
+                increase: account.history.length > 1 
+                  ? account.balance > account.history[account.history.length - 2].amount
+                  : true,
+              }}
+            />
+          ))}
+        </div>
+      )}
 
       <div className="mt-6">
         <h2 className="mb-4 text-xl font-semibold">Actions rapides</h2>
         <QuickActions />
       </div>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <TransactionHistory />
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TransactionHistory />
+        </div>
+        <div>
+          <NotificationsPanel />
+        </div>
+      </div>
+
+      <div className="mt-6">
         <SpendingChart data={spendingData} />
       </div>
     </AppLayout>
