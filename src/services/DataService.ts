@@ -177,7 +177,9 @@ export class DataService {
       const response = await fetchWithAuth('/notifications');
       const data = await response.json();
       
+      // Validate that the data matches the Notification[] type
       if (Array.isArray(data) && data.length > 0 && 'type' in data[0] && 'read' in data[0]) {
+        // Explicitly cast to Notification[] after verifying the structure
         return data as Notification[];
       }
       
