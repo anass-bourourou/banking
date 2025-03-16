@@ -1,4 +1,3 @@
-
 import { fetchWithAuth, api } from './api';
 
 export interface Account {
@@ -16,6 +15,7 @@ export interface Transaction {
   amount: number;
   type: 'credit' | 'debit';
   date: string;
+  category?: string; // Added optional category field
 }
 
 export interface Beneficiary {
