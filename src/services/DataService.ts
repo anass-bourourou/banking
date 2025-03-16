@@ -177,14 +177,19 @@ export class DataService {
       const response = await fetchWithAuth('/notifications');
       const data = await response.json();
       
-      // Validate that the data matches the Notification[] type
-      if (Array.isArray(data) && data.length > 0 && 'type' in data[0] && 'read' in data[0]) {
-        // Explicitly cast to Notification[] after verifying the structure
-        return data as Notification[];
+      // Properly validate that the data matches the Notification[] type structure
+      if (Array.isArray(data) && data.length > 0) {
+        // Check if the first item has the required Notification properties
+        const firstItem = data[0];
+        if ('title' in firstItem && 'message' in firstItem && 
+            'type' in firstItem && 'date' in firstItem && 
+            'read' in firstItem) {
+          // Safe to cast to Notification[] since we've verified the structure
+          return data as Notification[];
+        }
       }
       
-      // Fallback: If server doesn't have notifications endpoint or returns empty array,
-      // generate notifications based on recent transactions
+      // If data doesn't match Notification[] structure, fall back to generating notifications
       return DataService.generateNotificationsFromTransactions();
     } catch (error) {
       console.error('Error fetching notifications:', error);
