@@ -3,6 +3,7 @@ import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import AppLayout from '@/components/layout/AppLayout';
 import BalanceCard from '@/components/dashboard/BalanceCard';
+import AccountsSummary from '@/components/dashboard/AccountsSummary';
 import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import SpendingChart from '@/components/dashboard/SpendingChart';
 import QuickActions from '@/components/dashboard/QuickActions';
@@ -44,7 +45,7 @@ const Index = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
-          {accounts?.map((account) => (
+          {accounts?.slice(0, 3).map((account) => (
             <BalanceCard
               key={account.id}
               accountType={account.name}
@@ -74,15 +75,20 @@ const Index = () => {
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <TransactionHistory />
+          <AccountsSummary />
         </div>
         <div>
           <NotificationsPanel />
         </div>
       </div>
 
-      <div className="mt-6">
-        <SpendingChart data={spendingData} />
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <TransactionHistory />
+        </div>
+        <div>
+          <SpendingChart data={spendingData} />
+        </div>
       </div>
     </AppLayout>
   );

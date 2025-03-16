@@ -1,3 +1,4 @@
+
 import { fetchWithAuth, api } from './api';
 
 export interface Account {
@@ -32,6 +33,16 @@ export interface TransferData {
   toAccount: number | string;
   amount: number;
   description?: string;
+}
+
+export interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: 'info' | 'warning' | 'alert';
+  date: string;
+  read: boolean;
+  transactionId?: number;
 }
 
 export class DataService {
@@ -157,6 +168,76 @@ export class DataService {
     } catch (error) {
       console.error('Error adding beneficiary:', error);
       throw new Error('Impossible d\'ajouter le bénéficiaire');
+    }
+  }
+
+  static async getNotifications(): Promise<Notification[]> {
+    try {
+      // First try to fetch notifications from the server
+      const response = await fetchWithAuth('/notifications');
+      const data = await response.json();
+      
+      if (Array.isArray(data) && data.length > 0) {
+        return data as Notification[];
+      }
+      
+      // Fallback: If server doesn't have notifications endpoint or returns empty array,
+      // generate notifications based on recent transactions
+      return DataService.generateNotificationsFromTransactions();
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+      // Fallback to generating notifications from transactions
+      return DataService.generateNotificationsFromTransactions();
+    }
+  }
+  
+  private static async generateNotificationsFromTransactions(): Promise<Notification[]> {
+    try {
+      // Get recent transactions to generate notifications
+      const transactions = await DataService.getRecentTransactions();
+      
+      if (!transactions || transactions.length === 0) {
+        return [];
+      }
+      
+      // Generate notifications based on recent transactions
+      const notifications: Notification[] = transactions.slice(0, 3).map((transaction, index) => {
+        const isCredit = transaction.type === 'credit';
+        return {
+          id: `tr-${transaction.id}`,
+          title: isCredit ? 'Dépôt reçu' : 'Paiement effectué',
+          message: `${isCredit ? 'Réception de' : 'Paiement de'} ${transaction.amount.toLocaleString('fr-FR')}€ - ${transaction.description}`,
+          type: 'info',
+          date: transaction.date,
+          read: false,
+          transactionId: transaction.id
+        };
+      });
+      
+      // Add a few static notifications for demonstration
+      notifications.push({
+        id: 'sys-1',
+        title: 'Solde faible',
+        message: 'Votre compte Épargne atteindra bientôt le seuil minimum',
+        type: 'warning',
+        date: new Date().toISOString(),
+        read: false
+      });
+      
+      notifications.push({
+        id: 'sys-2',
+        title: 'Maintenance programmée',
+        message: 'Une maintenance est prévue ce weekend. Certains services pourraient être indisponibles.',
+        type: 'info',
+        date: new Date().toISOString(),
+        read: true
+      });
+      
+      // Sort by date, newest first
+      return notifications.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    } catch (error) {
+      console.error('Error generating notifications:', error);
+      return [];
     }
   }
 }

@@ -1,6 +1,7 @@
 
 import React from 'react';
-import { Bell, CreditCard, AlertTriangle, Info } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { Bell, CreditCard, AlertTriangle, Info, Clock, X } from 'lucide-react';
 import { 
   Card,
   CardContent,
@@ -8,45 +9,23 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-type NotificationType = 'info' | 'warning' | 'alert';
-
-interface Notification {
-  id: string;
-  title: string;
-  message: string;
-  type: NotificationType;
-  date: string;
-  read: boolean;
-}
+import { Button } from "@/components/ui/button";
+import { DataService, Notification } from '@/services/DataService';
+import { format, isToday, isYesterday } from 'date-fns';
+import { fr } from 'date-fns/locale';
+import { Loader2 } from 'lucide-react';
 
 const NotificationsPanel: React.FC = () => {
-  const [notifications, setNotifications] = React.useState<Notification[]>([
-    {
-      id: '1',
-      title: 'Paiement à venir',
-      message: 'Votre prélèvement automatique EDF de 82,50 € est prévu pour demain',
-      type: 'info',
-      date: '2023-09-22',
-      read: false,
+  const [notifications, setNotifications] = React.useState<Notification[]>([]);
+  
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['notifications'],
+    queryFn: DataService.getNotifications,
+    onSuccess: (data) => {
+      setNotifications(data);
     },
-    {
-      id: '2',
-      title: 'Solde faible',
-      message: 'Votre compte Épargne atteindra bientôt le seuil minimum',
-      type: 'warning',
-      date: '2023-09-21',
-      read: false,
-    },
-    {
-      id: '3',
-      title: 'Nouvelle carte bancaire',
-      message: 'Votre nouvelle carte sera livrée dans les 5 jours ouvrables',
-      type: 'info',
-      date: '2023-09-20',
-      read: true,
-    },
-  ]);
+    refetchInterval: 60000, // Refetch every minute
+  });
 
   const markAsRead = (id: string) => {
     setNotifications(notifications.map(notification => 
@@ -54,7 +33,15 @@ const NotificationsPanel: React.FC = () => {
     ));
   };
 
-  const getNotificationIcon = (type: NotificationType) => {
+  const markAllAsRead = () => {
+    setNotifications(notifications.map(notification => ({ ...notification, read: true })));
+  };
+
+  const clearNotification = (id: string) => {
+    setNotifications(notifications.filter(notification => notification.id !== id));
+  };
+
+  const getNotificationIcon = (type: Notification['type']) => {
     switch (type) {
       case 'info':
         return <Info className="h-5 w-5 text-blue-500" />;
@@ -67,7 +54,7 @@ const NotificationsPanel: React.FC = () => {
     }
   };
 
-  const getNotificationColor = (type: NotificationType, read: boolean) => {
+  const getNotificationColor = (type: Notification['type'], read: boolean) => {
     if (read) return "bg-gray-50";
     
     switch (type) {
@@ -82,7 +69,52 @@ const NotificationsPanel: React.FC = () => {
     }
   };
 
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    
+    if (isToday(date)) {
+      return "Aujourd'hui";
+    } else if (isYesterday(date)) {
+      return 'Hier';
+    } else {
+      return format(date, 'd MMMM yyyy', { locale: fr });
+    }
+  };
+
   const unreadCount = notifications.filter(n => !n.read).length;
+
+  if (isLoading) {
+    return (
+      <Card className="overflow-hidden shadow-card">
+        <CardHeader className="bg-white py-4">
+          <CardTitle className="flex items-center text-lg font-semibold">
+            <Bell className="mr-2 h-5 w-5" />
+            Notifications
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="flex h-[200px] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin text-bank-primary" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="overflow-hidden shadow-card">
+        <CardHeader className="bg-white py-4">
+          <CardTitle className="flex items-center text-lg font-semibold">
+            <Bell className="mr-2 h-5 w-5" />
+            Notifications
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="p-4 text-center">
+          <AlertTriangle className="mx-auto mb-2 h-8 w-8 text-amber-500" />
+          <p className="text-bank-gray">Impossible de charger les notifications</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card className="overflow-hidden shadow-card">
@@ -97,6 +129,16 @@ const NotificationsPanel: React.FC = () => {
               </Badge>
             )}
           </CardTitle>
+          {unreadCount > 0 && (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="text-xs text-bank-gray hover:text-bank-primary"
+              onClick={markAllAsRead}
+            >
+              Tout marquer comme lu
+            </Button>
+          )}
         </div>
       </CardHeader>
       <CardContent className="p-0">
@@ -105,24 +147,29 @@ const NotificationsPanel: React.FC = () => {
             {notifications.map((notification) => (
               <div 
                 key={notification.id}
-                className={`border-b border-gray-100 p-4 transition-colors last:border-0 hover:bg-gray-50 ${
+                className={`relative border-b border-gray-100 p-4 transition-colors last:border-0 hover:bg-gray-50 ${
                   getNotificationColor(notification.type, notification.read)
                 } ${!notification.read ? 'font-medium' : ''}`}
-                onClick={() => markAsRead(notification.id)}
               >
                 <div className="flex items-start space-x-3">
                   <div className="mt-0.5">
                     {getNotificationIcon(notification.type)}
                   </div>
-                  <div className="flex-1">
+                  <div className="flex-1" onClick={() => markAsRead(notification.id)}>
                     <div className="flex items-center justify-between">
                       <h4 className="font-medium text-bank-dark">{notification.title}</h4>
                       <span className="text-xs text-bank-gray">
-                        {new Date(notification.date).toLocaleDateString('fr-FR')}
+                        {formatDate(notification.date)}
                       </span>
                     </div>
                     <p className="mt-1 text-sm text-bank-gray-dark">{notification.message}</p>
                   </div>
+                  <button
+                    className="absolute right-2 top-2 rounded-full p-1 text-gray-400 hover:bg-gray-200 hover:text-gray-600"
+                    onClick={() => clearNotification(notification.id)}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
                 </div>
               </div>
             ))}
