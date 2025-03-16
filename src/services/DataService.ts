@@ -185,16 +185,16 @@ export class DataService {
             'type' in firstItem && 'date' in firstItem && 
             'read' in firstItem) {
           // Safe to cast to Notification[] since we've verified the structure
-          return data as Notification[];
+          return data as unknown as Notification[];
         }
       }
       
       // If data doesn't match Notification[] structure, fall back to generating notifications
-      return DataService.generateNotificationsFromTransactions();
+      return await DataService.generateNotificationsFromTransactions();
     } catch (error) {
       console.error('Error fetching notifications:', error);
       // Fallback to generating notifications from transactions
-      return DataService.generateNotificationsFromTransactions();
+      return await DataService.generateNotificationsFromTransactions();
     }
   }
   
