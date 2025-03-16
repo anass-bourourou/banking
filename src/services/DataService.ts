@@ -177,7 +177,7 @@ export class DataService {
       const response = await fetchWithAuth('/notifications');
       const data = await response.json();
       
-      if (Array.isArray(data) && data.length > 0) {
+      if (Array.isArray(data) && data.length > 0 && 'type' in data[0] && 'read' in data[0]) {
         return data as Notification[];
       }
       

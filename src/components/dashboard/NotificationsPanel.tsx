@@ -21,11 +21,15 @@ const NotificationsPanel: React.FC = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['notifications'],
     queryFn: DataService.getNotifications,
-    onSuccess: (data) => {
-      setNotifications(data);
-    },
     refetchInterval: 60000, // Refetch every minute
   });
+
+  // Update state when data changes
+  React.useEffect(() => {
+    if (data) {
+      setNotifications(data);
+    }
+  }, [data]);
 
   const markAsRead = (id: string) => {
     setNotifications(notifications.map(notification => 
