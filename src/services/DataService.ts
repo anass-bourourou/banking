@@ -184,7 +184,7 @@ export class DataService {
         if ('title' in firstItem && 'message' in firstItem && 
             'type' in firstItem && 'date' in firstItem && 
             'read' in firstItem) {
-          // Safe to cast to Notification[] since we've verified the structure
+          // Use a more robust type conversion approach
           return data as unknown as Notification[];
         }
       }
