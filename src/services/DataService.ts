@@ -1,4 +1,10 @@
 
+// Import necessary types from the service files
+import type { Account } from './AccountService';
+import type { Transaction, TransferData } from './TransactionService';
+import type { Beneficiary } from './BeneficiaryService';
+import type { Notification } from './NotificationService';
+
 // Re-export all domain-specific services
 export * from './AccountService';
 export * from './TransactionService';
