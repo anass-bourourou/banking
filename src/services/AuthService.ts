@@ -171,4 +171,90 @@ export class AuthService {
       });
     }
   }
+
+  /**
+   * Register a new user with Supabase
+   */
+  static async register(user: { email: string; password: string; name: string }): Promise<User> {
+    if (AuthService.useSupabase()) {
+      try {
+        // Use Supabase to register a new user
+        const { data, error } = await supabase.auth.signUp({
+          email: user.email,
+          password: user.password,
+          options: {
+            data: {
+              name: user.name
+            }
+          }
+        });
+
+        if (error) throw error;
+        if (!data.user) throw new Error('Erreur lors de la création du compte');
+
+        // Return the new user
+        return {
+          id: data.user.id,
+          name: data.user.user_metadata?.name || 'Utilisateur',
+          email: data.user.email || '',
+          lastLogin: new Date().toISOString()
+        };
+      } catch (error) {
+        console.error('Registration error:', error);
+        throw new Error('Erreur lors de la création du compte');
+      }
+    } else {
+      // Simulate API call
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          try {
+            const mockUser = {
+              id: 'usr_' + Math.random().toString(36).substr(2, 9),
+              name: user.name,
+              email: user.email,
+              lastLogin: new Date().toISOString()
+            };
+            
+            // For testing, store in localStorage
+            localStorage.setItem('isAuthenticated', 'true');
+            localStorage.setItem('user', JSON.stringify(mockUser));
+            
+            resolve(mockUser);
+          } catch (error) {
+            reject(new Error('Erreur lors de la création du compte'));
+          }
+        }, 1000);
+      });
+    }
+  }
+
+  /**
+   * Reset password with Supabase
+   */
+  static async resetPassword(email: string): Promise<void> {
+    if (AuthService.useSupabase()) {
+      try {
+        const { error } = await supabase.auth.resetPasswordForEmail(email, {
+          redirectTo: window.location.origin + '/reset-password',
+        });
+        
+        if (error) throw error;
+      } catch (error) {
+        console.error('Password reset error:', error);
+        throw new Error('Erreur lors de la réinitialisation du mot de passe');
+      }
+    } else {
+      // Simulate API call
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          try {
+            console.log('Password reset requested for:', email);
+            resolve();
+          } catch (error) {
+            reject(new Error('Erreur lors de la réinitialisation du mot de passe'));
+          }
+        }, 800);
+      });
+    }
+  }
 }
