@@ -19,7 +19,15 @@ import Receipts from "./pages/Receipts";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
-const queryClient = new QueryClient();
+// Initialize the query client with some default options
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      refetchOnWindowFocus: false, // disable refetching on window focus by default
+      retry: 1, // only retry failed queries once
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>

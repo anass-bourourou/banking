@@ -9,7 +9,7 @@ import SpendingChart from '@/components/dashboard/SpendingChart';
 import QuickActions from '@/components/dashboard/QuickActions';
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import { useAuth } from '@/contexts/AuthContext';
-import { DataService } from '@/services/DataService';
+import { AccountService } from '@/services/AccountService';
 import { Loader2 } from 'lucide-react';
 
 const Index = () => {
@@ -17,7 +17,7 @@ const Index = () => {
   
   const { data: accounts, isLoading: isLoadingAccounts } = useQuery({
     queryKey: ['accounts'],
-    queryFn: DataService.getAccounts,
+    queryFn: AccountService.getAccounts,
   });
 
   const spendingData = [
