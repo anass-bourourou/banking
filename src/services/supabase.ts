@@ -6,12 +6,14 @@ import type { Database } from '@/types/supabase';
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || '';
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
-// Create a single supabase client for the entire app
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey);
+// Create a client only if configuration is available
+export const supabase = (supabaseUrl && supabaseAnonKey) 
+  ? createClient<Database>(supabaseUrl, supabaseAnonKey)
+  : null;
 
 // Helper function to check if Supabase is properly configured
 export const isSupabaseConfigured = (): boolean => {
-  const isConfigured = Boolean(supabaseUrl && supabaseAnonKey);
+  const isConfigured = Boolean(supabaseUrl && supabaseAnonKey && supabase);
   
   if (!isConfigured) {
     console.warn(

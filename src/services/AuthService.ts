@@ -19,7 +19,7 @@ export class AuthService {
   }
 
   static async login(credentials: LoginCredentials): Promise<User> {
-    if (AuthService.useSupabase()) {
+    if (AuthService.useSupabase() && supabase) {
       try {
         // Use Supabase authentication
         const { data, error } = await supabase.auth.signInWithPassword({
@@ -68,7 +68,7 @@ export class AuthService {
   }
 
   static async logout(): Promise<void> {
-    if (AuthService.useSupabase()) {
+    if (AuthService.useSupabase() && supabase) {
       try {
         const { error } = await supabase.auth.signOut();
         if (error) throw error;
@@ -94,7 +94,7 @@ export class AuthService {
   }
 
   static async checkAuthStatus(): Promise<User | null> {
-    if (AuthService.useSupabase()) {
+    if (AuthService.useSupabase() && supabase) {
       try {
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) throw error;
@@ -126,7 +126,7 @@ export class AuthService {
   }
   
   static async updateProfile(userData: Partial<User>): Promise<User> {
-    if (AuthService.useSupabase()) {
+    if (AuthService.useSupabase() && supabase) {
       try {
         const { data: { user }, error } = await supabase.auth.updateUser({
           data: {
@@ -176,7 +176,7 @@ export class AuthService {
    * Register a new user with Supabase
    */
   static async register(user: { email: string; password: string; name: string }): Promise<User> {
-    if (AuthService.useSupabase()) {
+    if (AuthService.useSupabase() && supabase) {
       try {
         // Use Supabase to register a new user
         const { data, error } = await supabase.auth.signUp({
@@ -232,7 +232,7 @@ export class AuthService {
    * Reset password with Supabase
    */
   static async resetPassword(email: string): Promise<void> {
-    if (AuthService.useSupabase()) {
+    if (AuthService.useSupabase() && supabase) {
       try {
         const { error } = await supabase.auth.resetPasswordForEmail(email, {
           redirectTo: window.location.origin + '/reset-password',

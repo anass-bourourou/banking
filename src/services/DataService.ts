@@ -1,4 +1,3 @@
-
 import { supabase, isSupabaseConfigured } from './supabase';
 import { fetchWithAuth, api } from './api';
 import { toast } from 'sonner';
@@ -55,7 +54,7 @@ export class DataService {
 
   static async getAccounts(): Promise<Account[]> {
     try {
-      if (DataService.useSupabase()) {
+      if (DataService.useSupabase() && supabase) {
         const { data: accountsData, error: accountsError } = await supabase
           .from('accounts')
           .select('*');
@@ -120,7 +119,7 @@ export class DataService {
 
   static async getAccountById(id: number): Promise<Account | null> {
     try {
-      if (DataService.useSupabase()) {
+      if (DataService.useSupabase() && supabase) {
         const { data: account, error: accountError } = await supabase
           .from('accounts')
           .select('*')
@@ -175,7 +174,7 @@ export class DataService {
 
   static async getRecentTransactions(): Promise<Transaction[]> {
     try {
-      if (DataService.useSupabase()) {
+      if (DataService.useSupabase() && supabase) {
         const { data, error } = await supabase
           .from('transactions')
           .select('*')
@@ -206,7 +205,7 @@ export class DataService {
 
   static async getTransactionsByAccount(accountId: number): Promise<Transaction[]> {
     try {
-      if (DataService.useSupabase()) {
+      if (DataService.useSupabase() && supabase) {
         const { data, error } = await supabase
           .from('transactions')
           .select('*')
@@ -236,7 +235,7 @@ export class DataService {
 
   static async getBeneficiaries(): Promise<Beneficiary[]> {
     try {
-      if (DataService.useSupabase()) {
+      if (DataService.useSupabase() && supabase) {
         const { data, error } = await supabase
           .from('beneficiaries')
           .select('*');
@@ -264,7 +263,7 @@ export class DataService {
 
   static async createTransfer(data: TransferData): Promise<any> {
     try {
-      if (DataService.useSupabase()) {
+      if (DataService.useSupabase() && supabase) {
         // Get the accounts
         const { data: fromAccount, error: fromError } = await supabase
           .from('accounts')
@@ -348,7 +347,7 @@ export class DataService {
 
   static async addBeneficiary(beneficiary: Omit<Beneficiary, 'id'>): Promise<Beneficiary> {
     try {
-      if (DataService.useSupabase()) {
+      if (DataService.useSupabase() && supabase) {
         // Get current user
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
@@ -393,7 +392,7 @@ export class DataService {
 
   static async getNotifications(): Promise<Notification[]> {
     try {
-      if (DataService.useSupabase()) {
+      if (DataService.useSupabase() && supabase) {
         // Get current user
         const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
