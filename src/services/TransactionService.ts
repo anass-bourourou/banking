@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -17,6 +16,10 @@ export interface TransferData {
   toAccount: number | string;
   amount: number;
   description?: string;
+  isInstant?: boolean;
+  isScheduled?: boolean;
+  scheduledDate?: string;
+  recipients?: Array<{id: string, amount: number}>;
 }
 
 export class TransactionService extends BaseService {
@@ -118,7 +121,7 @@ export class TransactionService extends BaseService {
         const { data: transaction, error: transactionError } = await TransactionService.getSupabase()!
           .from('transactions')
           .insert({
-            description: data.description || 'Virement',
+            description: data.description || (data.isInstant ? 'Virement instantané' : 'Virement'),
             amount: data.amount,
             type: 'debit',
             date: new Date().toLocaleDateString('fr-FR'),
@@ -134,8 +137,8 @@ export class TransactionService extends BaseService {
         await TransactionService.getSupabase()!
           .from('notifications')
           .insert({
-            title: 'Virement effectué',
-            message: `Virement de ${data.amount.toLocaleString('fr-FR')}€ effectué avec succès.`,
+            title: data.isInstant ? 'Virement instantané effectué' : 'Virement effectué',
+            message: `Virement de ${data.amount.toLocaleString('fr-MA')} MAD effectué avec succès.`,
             type: 'info',
             date: new Date().toISOString(),
             read: false,
@@ -148,6 +151,7 @@ export class TransactionService extends BaseService {
           transferId: transaction?.id,
           date: new Date().toLocaleDateString('fr-FR'),
           status: 'completed',
+          isInstant: data.isInstant,
           ...data
         };
       } else {
@@ -162,6 +166,95 @@ export class TransactionService extends BaseService {
       console.error('Error creating transfer:', error);
       toast.error('Impossible de réaliser le virement');
       throw new Error('Impossible de réaliser le virement');
+    }
+  }
+
+  static async createMassTransfer(data: TransferData): Promise<any> {
+    try {
+      if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
+        // Implemention of mass transfer logic
+        const { data: fromAccount, error: fromError } = await TransactionService.getSupabase()!
+          .from('accounts')
+          .select('*')
+          .eq('id', data.fromAccount)
+          .single();
+
+        if (fromError) throw fromError;
+        if (!fromAccount) throw new Error('Compte source non trouvé');
+
+        // Calculate total amount for all recipients
+        let totalAmount = 0;
+        if (data.recipients && data.recipients.length > 0) {
+          totalAmount = data.recipients.reduce((sum, recipient) => sum + recipient.amount, 0);
+        } else {
+          totalAmount = data.amount;
+        }
+
+        // Validate sufficient funds
+        if (fromAccount.balance < totalAmount) {
+          throw new Error('Solde insuffisant pour effectuer ces virements');
+        }
+
+        // Update source account balance
+        const { error: updateError } = await TransactionService.getSupabase()!
+          .from('accounts')
+          .update({ 
+            balance: fromAccount.balance - totalAmount,
+            updated_at: new Date().toISOString()
+          })
+          .eq('id', data.fromAccount);
+
+        if (updateError) throw updateError;
+
+        // Create a transaction record
+        const { data: transaction, error: transactionError } = await TransactionService.getSupabase()!
+          .from('transactions')
+          .insert({
+            description: 'Virement de masse',
+            amount: totalAmount,
+            type: 'debit',
+            date: new Date().toLocaleDateString('fr-FR'),
+            account_id: data.fromAccount,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (transactionError) throw transactionError;
+
+        // Create notification
+        await TransactionService.getSupabase()!
+          .from('notifications')
+          .insert({
+            title: 'Virements multiples effectués',
+            message: `Virement de masse de ${totalAmount.toLocaleString('fr-MA')} MAD effectué avec succès.`,
+            type: 'info',
+            date: new Date().toISOString(),
+            read: false,
+            user_id: fromAccount.user_id,
+            transaction_id: transaction?.id
+          });
+
+        return {
+          success: true,
+          transferId: transaction?.id,
+          date: new Date().toLocaleDateString('fr-FR'),
+          status: 'completed',
+          totalAmount,
+          recipientsCount: data.recipients?.length || 1
+        };
+      } else {
+        // Use mock API
+        const response = await fetchWithAuth('/mass-transfers', {
+          method: 'POST',
+          body: JSON.stringify(data)
+        });
+        return await response.json();
+      }
+    } catch (error) {
+      console.error('Error creating mass transfer:', error);
+      toast.error('Impossible de réaliser les virements de masse');
+      throw new Error('Impossible de réaliser les virements de masse');
     }
   }
 }
