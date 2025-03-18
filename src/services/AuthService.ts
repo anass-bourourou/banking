@@ -18,7 +18,7 @@ import {
 } from './auth/mockAuth';
 
 // Export types
-export type { User, LoginCredentials } from './auth/types';
+export type { User, LoginCredentials, RegistrationData } from './auth/types';
 
 export class AuthService {
   static async login(credentials: LoginCredentials) {

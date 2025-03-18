@@ -21,22 +21,22 @@ const Index = () => {
   });
 
   const spendingData = [
-    { name: 'Logement', value: 950, color: '#0F7DEA' },
-    { name: 'Alimentation', value: 380, color: '#10B981' },
-    { name: 'Transport', value: 210, color: '#F59E0B' },
-    { name: 'Loisirs', value: 320, color: '#8B5CF6' },
-    { name: 'Santé', value: 150, color: '#EC4899' },
-    { name: 'Autres', value: 290, color: '#6B7280' },
+    { name: 'Logement', value: 2500, color: '#0F7DEA' },
+    { name: 'Alimentation', value: 1200, color: '#10B981' },
+    { name: 'Transport', value: 600, color: '#F59E0B' },
+    { name: 'Loisirs', value: 800, color: '#8B5CF6' },
+    { name: 'Santé', value: 400, color: '#EC4899' },
+    { name: 'Autres', value: 700, color: '#6B7280' },
   ];
 
   // Extract first name for greeting
-  const firstName = user?.name.split(' ')[0] || 'Jean';
+  const firstName = user?.name.split(' ')[0] || 'Mohammed';
 
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold md:text-2xl">Bonjour, {firstName}</h1>
-        <p className="text-bank-gray">Bienvenue dans votre espace bancaire</p>
+        <h1 className="text-xl font-semibold md:text-2xl">مرحبا, {firstName}</h1>
+        <p className="text-bank-gray">مرحبا بكم في الخدمات المصرفية الخاصة بكم</p>
       </div>
 
       {isLoadingAccounts ? (
@@ -51,7 +51,7 @@ const Index = () => {
               accountType={account.name}
               accountNumber={account.number}
               balance={account.balance}
-              currency="€"
+              currency="د.م."
               change={{
                 amount: account.history.length > 1 
                   ? account.balance - account.history[account.history.length - 2].amount 
@@ -69,7 +69,7 @@ const Index = () => {
       )}
 
       <div className="mt-6">
-        <h2 className="mb-4 text-xl font-semibold">Actions rapides</h2>
+        <h2 className="mb-4 text-xl font-semibold">إجراءات سريعة</h2>
         <QuickActions />
       </div>
 
