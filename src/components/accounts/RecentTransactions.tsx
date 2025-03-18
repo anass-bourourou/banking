@@ -45,10 +45,10 @@ const RecentTransactions: React.FC<RecentTransactionsProps> = ({ transactions })
                 transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
               }`}>
                 {transaction.type === 'credit' ? '+' : '-'} 
-                {transaction.amount.toLocaleString('fr-FR', {
+                {transaction.amount.toLocaleString('fr-MA', {
                   minimumFractionDigits: 2,
                   maximumFractionDigits: 2,
-                })} €
+                })} MAD
               </div>
             </div>
           ))}

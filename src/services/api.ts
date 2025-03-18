@@ -94,53 +94,53 @@ export const api = {
       return [
         {
           id: 1,
-          name: 'الحساب الجاري',
+          name: 'Compte Courant',
           number: '5482 7589 1234 5678',
           balance: 9850.75,
-          currency: 'د.م.',
+          currency: 'MAD',
           history: [
-            { month: 'يناير', amount: 8200 },
-            { month: 'فبراير', amount: 8350 },
-            { month: 'مارس', amount: 8100 },
-            { month: 'أبريل', amount: 8400 },
-            { month: 'ماي', amount: 8600 },
-            { month: 'يونيو', amount: 9500 },
-            { month: 'يوليوز', amount: 9700 },
-            { month: 'غشت', amount: 9850.75 },
+            { month: 'Janvier', amount: 8200 },
+            { month: 'Février', amount: 8350 },
+            { month: 'Mars', amount: 8100 },
+            { month: 'Avril', amount: 8400 },
+            { month: 'Mai', amount: 8600 },
+            { month: 'Juin', amount: 9500 },
+            { month: 'Juillet', amount: 9700 },
+            { month: 'Août', amount: 9850.75 },
           ]
         },
         {
           id: 2,
-          name: 'حساب التوفير',
+          name: 'Compte Épargne',
           number: '5482 7589 9876 5432',
           balance: 25350.20,
-          currency: 'د.م.',
+          currency: 'MAD',
           history: [
-            { month: 'يناير', amount: 19500 },
-            { month: 'فبراير', amount: 20800 },
-            { month: 'مارس', amount: 21000 },
-            { month: 'أبريل', amount: 22200 },
-            { month: 'ماي', amount: 23500 },
-            { month: 'يونيو', amount: 24800 },
-            { month: 'يوليوز', amount: 25100 },
-            { month: 'غشت', amount: 25350.20 },
+            { month: 'Janvier', amount: 19500 },
+            { month: 'Février', amount: 20800 },
+            { month: 'Mars', amount: 21000 },
+            { month: 'Avril', amount: 22200 },
+            { month: 'Mai', amount: 23500 },
+            { month: 'Juin', amount: 24800 },
+            { month: 'Juillet', amount: 25100 },
+            { month: 'Août', amount: 25350.20 },
           ]
         },
         {
           id: 3,
-          name: 'حساب الاستثمار',
+          name: 'Compte Investissement',
           number: '5482 7589 4567 8901',
           balance: 15760.50,
-          currency: 'د.م.',
+          currency: 'MAD',
           history: [
-            { month: 'يناير', amount: 16200 },
-            { month: 'فبراير', amount: 16100 },
-            { month: 'مارس', amount: 15900 },
-            { month: 'أبريل', amount: 15500 },
-            { month: 'ماي', amount: 15800 },
-            { month: 'يونيو', amount: 15700 },
-            { month: 'يوليوز', amount: 15900 },
-            { month: 'غشت', amount: 15760.50 },
+            { month: 'Janvier', amount: 16200 },
+            { month: 'Février', amount: 16100 },
+            { month: 'Mars', amount: 15900 },
+            { month: 'Avril', amount: 15500 },
+            { month: 'Mai', amount: 15800 },
+            { month: 'Juin', amount: 15700 },
+            { month: 'Juillet', amount: 15900 },
+            { month: 'Août', amount: 15760.50 },
           ]
         }
       ];
@@ -156,23 +156,23 @@ export const api = {
     getRecent: (): Transaction[] => {
       // Mock data - would be replaced with actual API call
       return [
-        { id: 1, description: 'تحويل الراتب', amount: 5500.00, type: 'credit', date: '15/09/2023' },
-        { id: 2, description: 'إيجار الشقة', amount: 3200.00, type: 'debit', date: '12/09/2023' },
-        { id: 3, description: 'مشتريات مرجان', amount: 728.75, type: 'debit', date: '10/09/2023' },
-        { id: 4, description: 'مطعم المنزه', amount: 425.50, type: 'debit', date: '08/09/2023' },
-        { id: 5, description: 'استرداد من سلمى', amount: 500.00, type: 'credit', date: '05/09/2023' },
-        { id: 6, description: 'فاتورة الكهرباء', amount: 450.25, type: 'debit', date: '01/09/2023' },
+        { id: 1, description: 'Salaire Attijariwafa Bank', amount: 8500.00, type: 'credit', date: '15/09/2023' },
+        { id: 2, description: 'Loyer Appartement', amount: 3800.00, type: 'debit', date: '12/09/2023' },
+        { id: 3, description: 'Marjane Casablanca', amount: 720.75, type: 'debit', date: '10/09/2023' },
+        { id: 4, description: 'Restaurant Dar Naji', amount: 350.50, type: 'debit', date: '08/09/2023' },
+        { id: 5, description: 'Remboursement Karim', amount: 500.00, type: 'credit', date: '05/09/2023' },
+        { id: 6, description: 'Facture ONEE', amount: 450.25, type: 'debit', date: '01/09/2023' },
       ];
     },
     getByAccountId: (accountId: number): Transaction[] => {
       // Mock data - would be replaced with actual API call
       const transactions = [
-        { id: 1, description: 'تحويل الراتب', amount: 5500.00, type: 'credit', date: '15/09/2023', accountId: 1 },
-        { id: 2, description: 'إيجار الشقة', amount: 3200.00, type: 'debit', date: '12/09/2023', accountId: 1 },
-        { id: 3, description: 'مشتريات مرجان', amount: 728.75, type: 'debit', date: '10/09/2023', accountId: 1 },
-        { id: 4, description: 'أرباح', amount: 350.50, type: 'credit', date: '01/09/2023', accountId: 2 },
-        { id: 5, description: 'إيداع', amount: 5000.00, type: 'credit', date: '20/08/2023', accountId: 2 },
-        { id: 6, description: 'أرباح الاستثمار', amount: 780.25, type: 'credit', date: '15/09/2023', accountId: 3 },
+        { id: 1, description: 'Salaire Attijariwafa Bank', amount: 8500.00, type: 'credit', date: '15/09/2023', accountId: 1 },
+        { id: 2, description: 'Loyer Appartement', amount: 3800.00, type: 'debit', date: '12/09/2023', accountId: 1 },
+        { id: 3, description: 'Marjane Casablanca', amount: 720.75, type: 'debit', date: '10/09/2023', accountId: 1 },
+        { id: 4, description: 'Dividendes CIH Bank', amount: 350.50, type: 'credit', date: '01/09/2023', accountId: 2 },
+        { id: 5, description: 'Dépôt Agence', amount: 5000.00, type: 'credit', date: '20/08/2023', accountId: 2 },
+        { id: 6, description: 'Dividendes Bourse de Casablanca', amount: 780.25, type: 'credit', date: '15/09/2023', accountId: 3 },
       ].filter(t => t.accountId === accountId)
        .map(({ accountId, ...rest }) => rest as Transaction);
       
@@ -202,7 +202,7 @@ export const api = {
       return [
         {
           id: '1',
-          name: 'فاطمة العلوي',
+          name: 'Fatima Alaoui',
           iban: 'MA64 0163 0000 0100 0000 0000 0150',
           bic: 'BCMAMADC',
           email: 'fatima.alaoui@email.ma',
@@ -210,14 +210,14 @@ export const api = {
         },
         {
           id: '2',
-          name: 'يوسف بنسعيد',
+          name: 'Youssef Bensaid',
           iban: 'MA64 0099 0000 0100 0000 0000 0321',
           bic: 'ATTIMADC',
           email: 'youssef.bensaid@email.ma',
         },
         {
           id: '3',
-          name: 'سلمى بنعلي',
+          name: 'Salma Benali',
           iban: 'MA64 0128 0000 0100 0000 0000 0456',
           bic: 'BPMAMAMC',
           phone: '07 65 43 21 09',
@@ -250,10 +250,10 @@ export const api = {
       // Mock user update
       return {
         id: 'usr_123456789',
-        name: data.name || 'محمد العمراني',
+        name: data.name || 'Mohammed Omrani',
         email: data.email || 'mohammed.omrani@example.ma',
         phone: data.phone || '06 12 34 56 78',
-        address: data.address || 'شارع محمد الخامس، الدار البيضاء 20250، المغرب',
+        address: data.address || 'Avenue Mohammed V, Casablanca 20250, Maroc',
         updatedAt: new Date().toISOString()
       };
     }

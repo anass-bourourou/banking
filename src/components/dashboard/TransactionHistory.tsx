@@ -18,50 +18,50 @@ const TransactionHistory: React.FC = () => {
     {
       id: '1',
       date: '2023-09-15',
-      description: 'تحويل الراتب',
-      amount: 5500.00,
+      description: 'Salaire Attijariwafa Bank',
+      amount: 8500.00,
       type: 'credit',
-      category: 'دخل',
+      category: 'Revenu',
     },
     {
       id: '2',
       date: '2023-09-12',
-      description: 'إيجار الشقة',
-      amount: 3200.00,
+      description: 'Loyer Appartement',
+      amount: 3800.00,
       type: 'debit',
-      category: 'سكن',
+      category: 'Logement',
     },
     {
       id: '3',
       date: '2023-09-10',
-      description: 'مشتريات مرجان',
+      description: 'Marjane Casablanca',
       amount: 728.75,
       type: 'debit',
-      category: 'تسوق',
+      category: 'Courses',
     },
     {
       id: '4',
       date: '2023-09-08',
-      description: 'مطعم المنزه',
+      description: 'Restaurant Dar Naji',
       amount: 425.50,
       type: 'debit',
-      category: 'مطاعم',
+      category: 'Restaurant',
     },
     {
       id: '5',
       date: '2023-09-05',
-      description: 'استرداد من سلمى',
+      description: 'Remboursement Karim',
       amount: 500.00,
       type: 'credit',
-      category: 'أصدقاء',
+      category: 'Amis',
     },
     {
       id: '6',
       date: '2023-09-01',
-      description: 'فاتورة الكهرباء',
+      description: 'Facture ONEE',
       amount: 450.25,
       type: 'debit',
-      category: 'فواتير',
+      category: 'Factures',
     },
   ];
 
@@ -72,7 +72,7 @@ const TransactionHistory: React.FC = () => {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('ar-MA', {
+    return date.toLocaleDateString('fr-MA', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric',
@@ -83,14 +83,14 @@ const TransactionHistory: React.FC = () => {
     <div className="overflow-hidden rounded-2xl bg-white shadow-card">
       <div className="border-b border-bank-gray-light p-4 md:p-6">
         <div className="flex flex-col justify-between space-y-4 sm:flex-row sm:items-center sm:space-y-0">
-          <h3 className="text-lg font-semibold text-bank-dark">المعاملات الأخيرة</h3>
+          <h3 className="text-lg font-semibold text-bank-dark">Transactions récentes</h3>
           <div className="relative w-full sm:w-64">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
               <Search size={16} className="text-bank-gray" />
             </div>
             <input
               type="text"
-              placeholder="البحث عن المعاملات..."
+              placeholder="Rechercher des transactions..."
               className="h-10 w-full rounded-lg border-0 bg-bank-gray-light pl-10 pr-4 text-sm text-bank-dark focus:outline-none focus:ring-1 focus:ring-bank-primary"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
@@ -126,16 +126,16 @@ const TransactionHistory: React.FC = () => {
                   transaction.type === 'credit' ? 'text-green-600' : 'text-red-600'
                 }`}>
                   {transaction.type === 'credit' ? '+' : '-'} 
-                  {transaction.amount.toLocaleString('ar-MA', {
+                  {transaction.amount.toLocaleString('fr-MA', {
                     minimumFractionDigits: 2,
                     maximumFractionDigits: 2,
-                  })} د.م.
+                  })} MAD
                 </div>
               </div>
             ))
           ) : (
             <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-bank-gray">لم يتم العثور على أي معاملات</p>
+              <p className="text-bank-gray">Aucune transaction trouvée</p>
             </div>
           )}
         </div>

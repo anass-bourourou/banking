@@ -18,10 +18,10 @@ const BalanceCard: React.FC<BalanceCardProps> = ({
   accountType,
   accountNumber,
   balance,
-  currency = "€",
+  currency = "MAD",
   change,
 }) => {
-  const formattedBalance = balance.toLocaleString('fr-FR', {
+  const formattedBalance = balance.toLocaleString('fr-MA', {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
@@ -60,7 +60,7 @@ const BalanceCard: React.FC<BalanceCardProps> = ({
           <span className="text-bank-gray">
             {change.increase ? 'Augmentation' : 'Diminution'} de{' '}
             <span className={change.increase ? 'text-green-600' : 'text-red-600'}>
-              {change.amount.toLocaleString('fr-FR', {
+              {change.amount.toLocaleString('fr-MA', {
                 minimumFractionDigits: 2,
                 maximumFractionDigits: 2,
               })}{' '}

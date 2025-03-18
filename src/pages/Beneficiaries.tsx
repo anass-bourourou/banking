@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -29,24 +30,24 @@ const Beneficiaries = () => {
   const [beneficiaries, setBeneficiaries] = useState<Beneficiary[]>([
     {
       id: '1',
-      name: 'Marie Durand',
-      iban: 'FR76 3000 4000 1200 0000 9876 543',
-      bic: 'BNPAFRPP',
-      email: 'marie.durand@email.com',
+      name: 'Fatima Alaoui',
+      iban: 'MA64 0163 0000 0100 0000 0000 0150',
+      bic: 'BCMAMADC',
+      email: 'fatima.alaoui@email.ma',
       phone: '06 12 34 56 78',
     },
     {
       id: '2',
-      name: 'Pierre Martin',
-      iban: 'FR76 1234 5678 9101 1121 3141 516',
-      bic: 'AGRIFRPP',
-      email: 'pierre.martin@email.com',
+      name: 'Youssef Bensaid',
+      iban: 'MA64 0099 0000 0100 0000 0000 0321',
+      bic: 'ATTIMADC',
+      email: 'youssef.bensaid@email.ma',
     },
     {
       id: '3',
-      name: 'Sophie Leroy',
-      iban: 'FR76 9876 5432 1098 7654 3210 123',
-      bic: 'SOGEFRPP',
+      name: 'Salma Benali',
+      iban: 'MA64 0128 0000 0100 0000 0000 0456',
+      bic: 'BPMAMAMC',
       phone: '07 65 43 21 09',
     },
   ]);
@@ -146,7 +147,7 @@ const Beneficiaries = () => {
                     id="name"
                     name="name"
                     className="bank-input"
-                    placeholder="Ex: Marie Durand"
+                    placeholder="Ex: Fatima Alaoui"
                     value={newBeneficiary.name}
                     onChange={handleInputChange}
                   />
@@ -158,7 +159,7 @@ const Beneficiaries = () => {
                     id="iban"
                     name="iban"
                     className="bank-input"
-                    placeholder="Ex: FR76 1234 5678 9101 1121 3141 516"
+                    placeholder="Ex: MA64 0163 0000 0100 0000 0000 0150"
                     value={newBeneficiary.iban}
                     onChange={handleInputChange}
                   />
@@ -170,7 +171,7 @@ const Beneficiaries = () => {
                     id="bic"
                     name="bic"
                     className="bank-input"
-                    placeholder="Ex: BNPAFRPP"
+                    placeholder="Ex: BCMAMADC"
                     value={newBeneficiary.bic}
                     onChange={handleInputChange}
                   />
@@ -183,7 +184,7 @@ const Beneficiaries = () => {
                     name="email"
                     type="email"
                     className="bank-input"
-                    placeholder="Ex: marie.durand@email.com"
+                    placeholder="Ex: fatima.alaoui@email.ma"
                     value={newBeneficiary.email}
                     onChange={handleInputChange}
                   />
