@@ -21,7 +21,8 @@ export class StatementService extends BaseService {
           .select('*');
 
         if (error) throw error;
-        return data || [];
+        // Cast data to BankStatement[] to ensure type safety
+        return (data as BankStatement[]) || [];
       } else {
         // Use mock API
         const response = await fetchWithAuth('/statements');
@@ -85,7 +86,8 @@ export class StatementService extends BaseService {
           .eq('account_id', accountId);
 
         if (error) throw error;
-        return data || [];
+        // Cast data to BankStatement[] to ensure type safety
+        return (data as BankStatement[]) || [];
       } else {
         // Use mock API
         const response = await fetchWithAuth(`/statements/account/${accountId}`);
