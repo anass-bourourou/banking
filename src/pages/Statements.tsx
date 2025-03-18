@@ -12,10 +12,13 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import StatementsList from '@/components/statements/StatementsList';
+import StatementViewer from '@/components/statements/StatementViewer';
 
 const Statements = () => {
   const [selectedAccount, setSelectedAccount] = useState<string>('all');
   const [selectedPeriod, setSelectedPeriod] = useState<string>('all');
+  const [viewStatement, setViewStatement] = useState<BankStatement | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   // Fetch accounts
   const { data: accounts = [], isLoading: isLoadingAccounts } = useQuery({
@@ -30,10 +33,8 @@ const Statements = () => {
   });
 
   const handleViewStatement = (statement: BankStatement) => {
-    // In a real application, this would open a modal or navigate to a statement viewer
-    toast.info('Visualisation du relevé', {
-      description: `Relevé ${statement.period} pour ${statement.accountName}`
-    });
+    setViewStatement(statement);
+    setIsViewerOpen(true);
   };
 
   const handleDownloadStatement = async (statement: BankStatement) => {
@@ -181,6 +182,13 @@ const Statements = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <StatementViewer 
+        statement={viewStatement}
+        open={isViewerOpen}
+        onOpenChange={setIsViewerOpen}
+        onDownload={handleDownloadStatement}
+      />
     </AppLayout>
   );
 };

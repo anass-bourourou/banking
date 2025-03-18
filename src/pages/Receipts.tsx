@@ -11,11 +11,14 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { toast } from 'sonner';
+import ReceiptViewer from '@/components/receipts/ReceiptViewer';
 
 const Receipts = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [viewReceipt, setViewReceipt] = useState<Receipt | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
 
   // Fetch receipts
   const { data: receipts = [], isLoading } = useQuery({
@@ -37,9 +40,8 @@ const Receipts = () => {
   };
 
   const handleView = (receipt: Receipt) => {
-    toast.info('Visualisation du reçu', {
-      description: `Reçu: ${receipt.title}`
-    });
+    setViewReceipt(receipt);
+    setIsViewerOpen(true);
   };
 
   // Filter receipts based on search term, type, and status
@@ -273,6 +275,13 @@ const Receipts = () => {
           )}
         </CardContent>
       </Card>
+      
+      <ReceiptViewer 
+        receipt={viewReceipt}
+        open={isViewerOpen}
+        onOpenChange={setIsViewerOpen}
+        onDownload={handleDownload}
+      />
     </AppLayout>
   );
 };
