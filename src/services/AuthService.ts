@@ -16,9 +16,10 @@ import {
   mockRegister,
   mockResetPassword
 } from './auth/mockAuth';
+import { User, LoginCredentials, RegistrationData } from './auth/types';
 
 // Export types
-export type { User, LoginCredentials, RegistrationData } from './auth/types';
+export type { User, LoginCredentials, RegistrationData };
 
 export class AuthService {
   static async login(credentials: LoginCredentials) {
