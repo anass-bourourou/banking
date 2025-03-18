@@ -21,8 +21,10 @@ export class StatementService extends BaseService {
           .select('*');
 
         if (error) throw error;
-        // Cast data to BankStatement[] to ensure type safety
-        return (data as BankStatement[]) || [];
+        
+        // First cast to unknown, then to BankStatement[] to avoid type errors
+        const statements = data as unknown as BankStatement[];
+        return statements || [];
       } else {
         // Use mock API
         const response = await fetchWithAuth('/statements');
@@ -86,8 +88,10 @@ export class StatementService extends BaseService {
           .eq('account_id', accountId);
 
         if (error) throw error;
-        // Cast data to BankStatement[] to ensure type safety
-        return (data as BankStatement[]) || [];
+        
+        // First cast to unknown, then to BankStatement[] to avoid type errors
+        const statements = data as unknown as BankStatement[];
+        return statements || [];
       } else {
         // Use mock API
         const response = await fetchWithAuth(`/statements/account/${accountId}`);
