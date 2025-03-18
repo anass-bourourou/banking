@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -30,47 +29,9 @@ export class StatementService extends BaseService {
         const response = await fetchWithAuth('/statements');
         const data = await response.json();
         
-        if (Array.isArray(data)) {
-          return data as BankStatement[];
-        }
-        
-        return [
-          {
-            id: '1',
-            accountId: 1,
-            accountName: 'Compte Courant',
-            period: 'Octobre 2023',
-            date: '01/11/2023',
-          },
-          {
-            id: '2',
-            accountId: 1,
-            accountName: 'Compte Courant',
-            period: 'Septembre 2023',
-            date: '01/10/2023',
-          },
-          {
-            id: '3',
-            accountId: 1,
-            accountName: 'Compte Courant',
-            period: 'Août 2023',
-            date: '01/09/2023',
-          },
-          {
-            id: '4',
-            accountId: 2,
-            accountName: 'Compte Épargne',
-            period: 'Octobre 2023',
-            date: '01/11/2023',
-          },
-          {
-            id: '5',
-            accountId: 2,
-            accountName: 'Compte Épargne',
-            period: 'Septembre 2023',
-            date: '01/10/2023',
-          },
-        ];
+        // First cast to unknown, then to BankStatement[] to avoid type errors
+        const statements = data as unknown as BankStatement[];
+        return statements || [];
       }
     } catch (error) {
       console.error('Error fetching statements:', error);
@@ -95,47 +56,56 @@ export class StatementService extends BaseService {
       } else {
         // Use mock API
         const response = await fetchWithAuth(`/statements/account/${accountId}`);
+        const data = await response.json();
         
-        // Return mock data filtered by account
-        const mockData = [
-          {
-            id: '1',
-            accountId: 1,
-            accountName: 'Compte Courant',
-            period: 'Octobre 2023',
-            date: '01/11/2023',
-          },
-          {
-            id: '2',
-            accountId: 1,
-            accountName: 'Compte Courant',
-            period: 'Septembre 2023',
-            date: '01/10/2023',
-          },
-          {
-            id: '3',
-            accountId: 1,
-            accountName: 'Compte Courant',
-            period: 'Août 2023',
-            date: '01/09/2023',
-          },
-          {
-            id: '4',
-            accountId: 2,
-            accountName: 'Compte Épargne',
-            period: 'Octobre 2023',
-            date: '01/11/2023',
-          },
-          {
-            id: '5',
-            accountId: 2,
-            accountName: 'Compte Épargne',
-            period: 'Septembre 2023',
-            date: '01/10/2023',
-          },
-        ];
+        // First cast to unknown, then to BankStatement[] to avoid type errors
+        const statements = data as unknown as BankStatement[];
         
-        return mockData.filter(statement => statement.accountId === accountId);
+        // If we don't have actual data, use our mock data
+        if (!statements || !Array.isArray(statements)) {
+          // Return mock data filtered by account
+          const mockData = [
+            {
+              id: '1',
+              accountId: 1,
+              accountName: 'Compte Courant',
+              period: 'Octobre 2023',
+              date: '01/11/2023',
+            },
+            {
+              id: '2',
+              accountId: 1,
+              accountName: 'Compte Courant',
+              period: 'Septembre 2023',
+              date: '01/10/2023',
+            },
+            {
+              id: '3',
+              accountId: 1,
+              accountName: 'Compte Courant',
+              period: 'Août 2023',
+              date: '01/09/2023',
+            },
+            {
+              id: '4',
+              accountId: 2,
+              accountName: 'Compte Épargne',
+              period: 'Octobre 2023',
+              date: '01/11/2023',
+            },
+            {
+              id: '5',
+              accountId: 2,
+              accountName: 'Compte Épargne',
+              period: 'Septembre 2023',
+              date: '01/10/2023',
+            },
+          ];
+          
+          return mockData.filter(statement => statement.accountId === accountId);
+        }
+        
+        return statements;
       }
     } catch (error) {
       console.error(`Error fetching statements for account ${accountId}:`, error);
