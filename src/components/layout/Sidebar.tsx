@@ -1,5 +1,6 @@
+
 import React from 'react';
-import { useLocation, Link, matchPath } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
@@ -25,13 +26,7 @@ const Sidebar = () => {
   };
 
   const isSubmenuActive = (submenu: { label: string; path: string }[]) => {
-    return submenu.some(item => {
-      const match = matchPath(location.pathname, {
-        path: item.path,
-        exact: true,
-      });
-      return !!match;
-    });
+    return submenu.some(item => location.pathname === item.path);
   };
 
   const menuItems = [
