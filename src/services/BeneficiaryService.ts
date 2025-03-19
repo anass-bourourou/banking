@@ -10,6 +10,9 @@ export interface Beneficiary {
   bic?: string;
   email?: string;
   phone?: string;
+  bank_name?: string;
+  address?: string;
+  favorite: boolean;
 }
 
 export class BeneficiaryService extends BaseService {
@@ -18,7 +21,8 @@ export class BeneficiaryService extends BaseService {
       if (BeneficiaryService.useSupabase() && BeneficiaryService.getSupabase()) {
         const { data, error } = await BeneficiaryService.getSupabase()!
           .from('beneficiaries')
-          .select('*');
+          .select('*')
+          .order('name');
 
         if (error) throw error;
         return data || [];
@@ -41,7 +45,7 @@ export class BeneficiaryService extends BaseService {
     }
   }
 
-  static async addBeneficiary(beneficiary: Omit<Beneficiary, 'id'>): Promise<Beneficiary> {
+  static async addBeneficiary(beneficiary: Omit<Beneficiary, 'id' | 'favorite'>): Promise<Beneficiary> {
     try {
       if (BeneficiaryService.useSupabase() && BeneficiaryService.getSupabase()) {
         // Get current user
@@ -54,6 +58,7 @@ export class BeneficiaryService extends BaseService {
           .insert({
             ...beneficiary,
             user_id: user.id,
+            favorite: false,
             created_at: new Date().toISOString()
           })
           .select()
@@ -61,6 +66,10 @@ export class BeneficiaryService extends BaseService {
 
         if (error) throw error;
         if (!data) throw new Error('Erreur lors de l\'ajout du bénéficiaire');
+
+        toast.success('Bénéficiaire ajouté avec succès', {
+          description: `${beneficiary.name} a été ajouté à vos bénéficiaires`
+        });
 
         return data;
       } else {
@@ -73,6 +82,9 @@ export class BeneficiaryService extends BaseService {
         
         // Ensure the response includes an id
         if (data && 'id' in data) {
+          toast.success('Bénéficiaire ajouté avec succès', {
+            description: `${beneficiary.name} a été ajouté à vos bénéficiaires`
+          });
           return data as Beneficiary;
         }
         
@@ -83,6 +95,138 @@ export class BeneficiaryService extends BaseService {
       console.error('Error adding beneficiary:', error);
       toast.error('Impossible d\'ajouter le bénéficiaire');
       throw new Error('Impossible d\'ajouter le bénéficiaire');
+    }
+  }
+
+  static async updateBeneficiary(id: string, updates: Partial<Beneficiary>): Promise<Beneficiary> {
+    try {
+      if (BeneficiaryService.useSupabase() && BeneficiaryService.getSupabase()) {
+        const { data, error } = await BeneficiaryService.getSupabase()!
+          .from('beneficiaries')
+          .update(updates)
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (!data) throw new Error('Bénéficiaire non trouvé');
+
+        toast.success('Bénéficiaire mis à jour', {
+          description: `Les informations de ${data.name} ont été mises à jour`
+        });
+
+        return data;
+      } else {
+        // Use mock API
+        const response = await fetchWithAuth(`/beneficiaries/${id}`, {
+          method: 'PATCH',
+          body: JSON.stringify(updates)
+        });
+        const data = await response.json();
+        
+        if (data && 'id' in data) {
+          toast.success('Bénéficiaire mis à jour', {
+            description: `Les informations ont été mises à jour`
+          });
+          return data as Beneficiary;
+        }
+        
+        throw new Error('Format de réponse inattendu');
+      }
+    } catch (error) {
+      console.error('Error updating beneficiary:', error);
+      toast.error('Impossible de mettre à jour le bénéficiaire');
+      throw new Error('Impossible de mettre à jour le bénéficiaire');
+    }
+  }
+
+  static async deleteBeneficiary(id: string): Promise<void> {
+    try {
+      if (BeneficiaryService.useSupabase() && BeneficiaryService.getSupabase()) {
+        // Get the beneficiary first
+        const { data: beneficiary, error: fetchError } = await BeneficiaryService.getSupabase()!
+          .from('beneficiaries')
+          .select('name')
+          .eq('id', id)
+          .single();
+
+        if (fetchError) throw fetchError;
+        
+        // Then delete it
+        const { error } = await BeneficiaryService.getSupabase()!
+          .from('beneficiaries')
+          .delete()
+          .eq('id', id);
+
+        if (error) throw error;
+
+        toast.success('Bénéficiaire supprimé', {
+          description: beneficiary ? `${beneficiary.name} a été supprimé de vos bénéficiaires` : 'Le bénéficiaire a été supprimé'
+        });
+      } else {
+        // Use mock API
+        await fetchWithAuth(`/beneficiaries/${id}`, {
+          method: 'DELETE'
+        });
+        
+        toast.success('Bénéficiaire supprimé', {
+          description: 'Le bénéficiaire a été supprimé'
+        });
+      }
+    } catch (error) {
+      console.error('Error deleting beneficiary:', error);
+      toast.error('Impossible de supprimer le bénéficiaire');
+      throw new Error('Impossible de supprimer le bénéficiaire');
+    }
+  }
+
+  static async toggleFavorite(id: string, isFavorite: boolean): Promise<Beneficiary> {
+    try {
+      if (BeneficiaryService.useSupabase() && BeneficiaryService.getSupabase()) {
+        const { data, error } = await BeneficiaryService.getSupabase()!
+          .from('beneficiaries')
+          .update({ favorite: isFavorite })
+          .eq('id', id)
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (!data) throw new Error('Bénéficiaire non trouvé');
+
+        const message = isFavorite 
+          ? `${data.name} a été ajouté aux favoris`
+          : `${data.name} a été retiré des favoris`;
+          
+        toast.success('Favoris mis à jour', {
+          description: message
+        });
+
+        return data;
+      } else {
+        // Use mock API
+        const response = await fetchWithAuth(`/beneficiaries/${id}/favorite`, {
+          method: 'PUT',
+          body: JSON.stringify({ favorite: isFavorite })
+        });
+        const data = await response.json();
+        
+        if (data && 'id' in data) {
+          const message = isFavorite 
+            ? `Le bénéficiaire a été ajouté aux favoris`
+            : `Le bénéficiaire a été retiré des favoris`;
+            
+          toast.success('Favoris mis à jour', {
+            description: message
+          });
+          return data as Beneficiary;
+        }
+        
+        throw new Error('Format de réponse inattendu');
+      }
+    } catch (error) {
+      console.error('Error toggling favorite status:', error);
+      toast.error('Impossible de modifier le statut de favori');
+      throw new Error('Impossible de modifier le statut de favori');
     }
   }
 }

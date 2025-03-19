@@ -10,6 +10,12 @@ export interface Transaction {
   type: 'credit' | 'debit';
   date: string;
   category?: string;
+  recipient_name?: string;
+  recipient_account?: string;
+  transfer_type?: 'standard' | 'instant' | 'scheduled' | 'mass';
+  status: 'completed' | 'pending' | 'failed';
+  reference_id?: string;
+  fees?: number;
 }
 
 export interface TransferData {
@@ -72,12 +78,7 @@ export class TransactionService extends BaseService {
         const response = await fetchWithAuth(`/transactions/account/${accountId}`);
         const data = await response.json();
         
-        // Ensure the response matches the Transaction[] type
-        if (Array.isArray(data) && data.length > 0 && 'description' in data[0]) {
-          return data as Transaction[];
-        }
-        
-        return []; // Return empty array if no transactions
+        return data as Transaction[] || [];
       }
     } catch (error) {
       console.error(`Error fetching transactions for account ${accountId}:`, error);
@@ -108,10 +109,29 @@ export class TransactionService extends BaseService {
         }
 
         // Start a transaction
-        // Note: Supabase doesn't support true transactions in the client library
-        // This is a simplified approach
+        // 1. Create a transfer record
+        const { data: transfer, error: transferError } = await TransactionService.getSupabase()!
+          .from('transfers')
+          .insert({
+            from_account_id: data.fromAccount,
+            beneficiary_id: typeof data.toAccount === 'string' ? data.toAccount : undefined,
+            to_account_id: typeof data.toAccount === 'number' ? data.toAccount : undefined,
+            amount: data.amount,
+            description: data.description,
+            date: new Date().toISOString(),
+            scheduled_date: data.scheduledDate,
+            is_instant: data.isInstant || false,
+            is_recurring: false,
+            status: 'completed',
+            fees: data.fees,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
-        // 1. Update source account balance
+        if (transferError) throw transferError;
+
+        // 2. Update source account balance
         const { error: updateError } = await TransactionService.getSupabase()!
           .from('accounts')
           .update({ 
@@ -122,15 +142,18 @@ export class TransactionService extends BaseService {
 
         if (updateError) throw updateError;
 
-        // 2. Record the transaction
+        // 3. Record the transaction
         const { data: transaction, error: transactionError } = await TransactionService.getSupabase()!
           .from('transactions')
           .insert({
             description: data.description || (data.isInstant ? 'Virement instantané' : 'Virement'),
             amount: data.amount,
             type: 'debit',
-            date: new Date().toLocaleDateString('fr-FR'),
+            date: new Date().toISOString(),
             account_id: data.fromAccount,
+            transfer_type: data.isInstant ? 'instant' : 'standard',
+            status: 'completed',
+            reference_id: transfer?.id.toString(),
             created_at: new Date().toISOString()
           })
           .select()
@@ -138,7 +161,7 @@ export class TransactionService extends BaseService {
 
         if (transactionError) throw transactionError;
 
-        // 3. Record the fees transaction if applicable
+        // 4. Record the fees transaction if applicable
         if (data.fees && data.fees > 0) {
           const { error: feesError } = await TransactionService.getSupabase()!
             .from('transactions')
@@ -146,16 +169,19 @@ export class TransactionService extends BaseService {
               description: 'Frais de virement instantané',
               amount: data.fees,
               type: 'debit',
-              date: new Date().toLocaleDateString('fr-FR'),
+              date: new Date().toISOString(),
               account_id: data.fromAccount,
               category: 'Frais bancaires',
+              transfer_type: 'instant',
+              status: 'completed',
+              reference_id: transfer?.id.toString(),
               created_at: new Date().toISOString()
             });
 
           if (feesError) throw feesError;
         }
 
-        // 4. Create a notification for the transfer
+        // 5. Create a notification for the transfer
         await TransactionService.getSupabase()!
           .from('notifications')
           .insert({
@@ -165,12 +191,13 @@ export class TransactionService extends BaseService {
             date: new Date().toISOString(),
             read: false,
             user_id: fromAccount.user_id,
-            transaction_id: transaction?.id
+            transaction_id: transaction?.id,
+            transfer_id: transfer?.id
           });
 
         return {
           success: true,
-          transferId: transaction?.id,
+          transferId: transfer?.id,
           date: new Date().toLocaleDateString('fr-FR'),
           status: 'completed',
           isInstant: data.isInstant,
@@ -194,7 +221,7 @@ export class TransactionService extends BaseService {
   static async createMassTransfer(data: TransferData): Promise<any> {
     try {
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
-        // Implemention of mass transfer logic
+        // Implementation of mass transfer logic
         const { data: fromAccount, error: fromError } = await TransactionService.getSupabase()!
           .from('accounts')
           .select('*')
@@ -222,6 +249,25 @@ export class TransactionService extends BaseService {
           throw new Error('Solde insuffisant pour effectuer ces virements');
         }
 
+        // Create a master transfer record
+        const { data: masterTransfer, error: masterTransferError } = await TransactionService.getSupabase()!
+          .from('transfers')
+          .insert({
+            from_account_id: data.fromAccount,
+            amount: totalAmount - (data.fees || 0),
+            description: 'Virement de masse',
+            date: new Date().toISOString(),
+            is_instant: false,
+            is_recurring: false,
+            status: 'completed',
+            fees: data.fees,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
+
+        if (masterTransferError) throw masterTransferError;
+
         // Update source account balance
         const { error: updateError } = await TransactionService.getSupabase()!
           .from('accounts')
@@ -233,15 +279,39 @@ export class TransactionService extends BaseService {
 
         if (updateError) throw updateError;
 
-        // Create a transaction record
+        // Process each recipient
+        if (data.recipients && data.recipients.length > 0) {
+          for (const recipient of data.recipients) {
+            const { error: transferError } = await TransactionService.getSupabase()!
+              .from('transfers')
+              .insert({
+                from_account_id: data.fromAccount,
+                beneficiary_id: recipient.id,
+                amount: recipient.amount,
+                description: data.description || 'Virement de masse',
+                date: new Date().toISOString(),
+                is_instant: false,
+                is_recurring: false,
+                status: 'completed',
+                created_at: new Date().toISOString()
+              });
+
+            if (transferError) throw transferError;
+          }
+        }
+
+        // Create a transaction record for the total mass transfer
         const { data: transaction, error: transactionError } = await TransactionService.getSupabase()!
           .from('transactions')
           .insert({
             description: 'Virement de masse',
-            amount: data.recipients ? totalAmount - (data.fees || 0) : data.amount,
+            amount: totalAmount - (data.fees || 0),
             type: 'debit',
-            date: new Date().toLocaleDateString('fr-FR'),
+            date: new Date().toISOString(),
             account_id: data.fromAccount,
+            transfer_type: 'mass',
+            status: 'completed',
+            reference_id: masterTransfer?.id.toString(),
             created_at: new Date().toISOString()
           })
           .select()
@@ -257,9 +327,12 @@ export class TransactionService extends BaseService {
               description: 'Frais de virement de masse',
               amount: data.fees,
               type: 'debit',
-              date: new Date().toLocaleDateString('fr-FR'),
+              date: new Date().toISOString(),
               account_id: data.fromAccount,
               category: 'Frais bancaires',
+              transfer_type: 'mass',
+              status: 'completed',
+              reference_id: masterTransfer?.id.toString(),
               created_at: new Date().toISOString()
             });
 
@@ -276,12 +349,13 @@ export class TransactionService extends BaseService {
             date: new Date().toISOString(),
             read: false,
             user_id: fromAccount.user_id,
-            transaction_id: transaction?.id
+            transaction_id: transaction?.id,
+            transfer_id: masterTransfer?.id
           });
 
         return {
           success: true,
-          transferId: transaction?.id,
+          transferId: masterTransfer?.id,
           date: new Date().toLocaleDateString('fr-FR'),
           status: 'completed',
           totalAmount: totalAmount - (data.fees || 0),

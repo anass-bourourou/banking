@@ -72,6 +72,12 @@ export interface Database {
           account_id: number
           category?: string
           created_at: string
+          recipient_name?: string
+          recipient_account?: string
+          transfer_type?: 'standard' | 'instant' | 'scheduled' | 'mass'
+          status: 'completed' | 'pending' | 'failed'
+          reference_id?: string
+          fees?: number
         }
         Insert: {
           id?: number
@@ -82,6 +88,12 @@ export interface Database {
           account_id: number
           category?: string
           created_at?: string
+          recipient_name?: string
+          recipient_account?: string
+          transfer_type?: 'standard' | 'instant' | 'scheduled' | 'mass'
+          status?: 'completed' | 'pending' | 'failed'
+          reference_id?: string
+          fees?: number
         }
         Update: {
           id?: number
@@ -91,6 +103,62 @@ export interface Database {
           date?: string
           account_id?: number
           category?: string
+          created_at?: string
+          recipient_name?: string
+          recipient_account?: string
+          transfer_type?: 'standard' | 'instant' | 'scheduled' | 'mass'
+          status?: 'completed' | 'pending' | 'failed'
+          reference_id?: string
+          fees?: number
+        }
+      }
+      transfers: {
+        Row: {
+          id: number
+          from_account_id: number
+          to_account_id?: number
+          beneficiary_id?: string
+          amount: number
+          description?: string
+          date: string
+          scheduled_date?: string
+          is_instant: boolean
+          is_recurring: boolean
+          recurring_frequency?: string
+          status: 'completed' | 'pending' | 'failed'
+          fees?: number
+          created_at: string
+        }
+        Insert: {
+          id?: number
+          from_account_id: number
+          to_account_id?: number
+          beneficiary_id?: string
+          amount: number
+          description?: string
+          date: string
+          scheduled_date?: string
+          is_instant?: boolean
+          is_recurring?: boolean
+          recurring_frequency?: string
+          status?: 'completed' | 'pending' | 'failed'
+          fees?: number
+          created_at?: string
+        }
+        Update: {
+          id?: number
+          from_account_id?: number
+          to_account_id?: number
+          beneficiary_id?: string
+          amount?: number
+          description?: string
+          date?: string
+          scheduled_date?: string
+          is_instant?: boolean
+          is_recurring?: boolean
+          recurring_frequency?: string
+          status?: 'completed' | 'pending' | 'failed'
+          fees?: number
           created_at?: string
         }
       }
@@ -103,6 +171,9 @@ export interface Database {
           email?: string
           phone?: string
           user_id: string
+          bank_name?: string
+          address?: string
+          favorite: boolean
           created_at: string
         }
         Insert: {
@@ -113,6 +184,9 @@ export interface Database {
           email?: string
           phone?: string
           user_id: string
+          bank_name?: string
+          address?: string
+          favorite?: boolean
           created_at?: string
         }
         Update: {
@@ -123,6 +197,9 @@ export interface Database {
           email?: string
           phone?: string
           user_id?: string
+          bank_name?: string
+          address?: string
+          favorite?: boolean
           created_at?: string
         }
       }
@@ -136,6 +213,7 @@ export interface Database {
           read: boolean
           user_id: string
           transaction_id?: number
+          transfer_id?: number
         }
         Insert: {
           id?: string
@@ -146,6 +224,7 @@ export interface Database {
           read: boolean
           user_id: string
           transaction_id?: number
+          transfer_id?: number
         }
         Update: {
           id?: string
@@ -156,6 +235,127 @@ export interface Database {
           read?: boolean
           user_id?: string
           transaction_id?: number
+          transfer_id?: number
+        }
+      }
+      statements: {
+        Row: {
+          id: string
+          account_id: number
+          period: string
+          date: string
+          file_path?: string
+          status: 'available' | 'processing'
+          download_count: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          account_id: number
+          period: string
+          date: string
+          file_path?: string
+          status?: 'available' | 'processing'
+          download_count?: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          account_id?: number
+          period?: string
+          date?: string
+          file_path?: string
+          status?: 'available' | 'processing'
+          download_count?: number
+          created_at?: string
+        }
+      }
+      bills: {
+        Row: {
+          id: string
+          reference: string
+          type: 'DGI' | 'CIM' | 'OTHER'
+          amount: number
+          dueDate: string
+          status: 'pending' | 'paid'
+          paymentDate?: string
+          description: string
+          user_id: string
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          reference: string
+          type: 'DGI' | 'CIM' | 'OTHER'
+          amount: number
+          dueDate: string
+          status?: 'pending' | 'paid'
+          paymentDate?: string
+          description: string
+          user_id: string
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          reference?: string
+          type?: 'DGI' | 'CIM' | 'OTHER'
+          amount?: number
+          dueDate?: string
+          status?: 'pending' | 'paid'
+          paymentDate?: string
+          description?: string
+          user_id?: string
+          created_at?: string
+        }
+      }
+      scheduled_transfers: {
+        Row: {
+          id: number
+          from_account_id: number
+          to_account_id?: number
+          beneficiary_id?: string
+          amount: number
+          description?: string
+          scheduled_date: string
+          recurring: boolean
+          frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+          next_execution_date: string
+          end_date?: string
+          status: 'active' | 'paused' | 'completed' | 'cancelled'
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          id?: number
+          from_account_id: number
+          to_account_id?: number
+          beneficiary_id?: string
+          amount: number
+          description?: string
+          scheduled_date: string
+          recurring?: boolean
+          frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+          next_execution_date: string
+          end_date?: string
+          status?: 'active' | 'paused' | 'completed' | 'cancelled'
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          id?: number
+          from_account_id?: number
+          to_account_id?: number
+          beneficiary_id?: string
+          amount?: number
+          description?: string
+          scheduled_date?: string
+          recurring?: boolean
+          frequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly'
+          next_execution_date?: string
+          end_date?: string
+          status?: 'active' | 'paused' | 'completed' | 'cancelled'
+          created_at?: string
+          user_id?: string
         }
       }
     }
