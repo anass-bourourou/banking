@@ -1,156 +1,153 @@
-
 import React from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, Link, matchPath } from 'react-router-dom';
+import { cn } from '@/lib/utils';
+import { Button } from '@/components/ui/button';
+import { useAuth } from '@/contexts/AuthContext';
+
 import { 
-  Home, 
+  LayoutDashboard, 
   CreditCard, 
   Send, 
   Users, 
   FileText, 
   Receipt, 
   Settings, 
-  LogOut, 
-  DollarSign
+  LogOut,
+  FileSpreadsheet
 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
-import { toast } from 'sonner';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
 
-interface SidebarProps {
-  open: boolean;
-}
-
-const Sidebar: React.FC<SidebarProps> = ({ open }) => {
+const Sidebar = () => {
   const location = useLocation();
   const { logout } = useAuth();
-  const navigate = useNavigate();
-  
-  const menuItems = [
-    { icon: Home, label: 'Tableau de bord', path: '/' },
-    { icon: CreditCard, label: 'Comptes', path: '/accounts' },
-    { icon: Send, label: 'Virements', path: '/transfers' },
-    { icon: Users, label: 'Bénéficiaires', path: '/beneficiaries' },
-    { icon: DollarSign, label: 'Paiements', path: '/payments' },
-    { icon: FileText, label: 'Relevés', path: '/statements' },
-    { icon: Receipt, label: 'Reçus', path: '/receipts' },
-  ];
 
   const isActive = (path: string) => {
     return location.pathname === path;
   };
 
-  const handleLogout = async () => {
-    try {
-      await logout();
-      toast.success('Déconnexion réussie');
-      navigate('/login');
-    } catch (error) {
-      toast.error('Erreur lors de la déconnexion');
-      console.error('Logout error:', error);
-    }
+  const isSubmenuActive = (submenu: { label: string; path: string }[]) => {
+    return submenu.some(item => {
+      const match = matchPath(location.pathname, {
+        path: item.path,
+        exact: true,
+      });
+      return !!match;
+    });
   };
 
+  const menuItems = [
+    {
+      icon: LayoutDashboard,
+      label: 'Tableau de bord',
+      path: '/dashboard',
+    },
+    {
+      icon: CreditCard,
+      label: 'Comptes',
+      path: '/accounts',
+    },
+    {
+      icon: Send,
+      label: 'Virements',
+      path: '/transfers',
+    },
+    {
+      icon: Users,
+      label: 'Bénéficiaires',
+      path: '/beneficiaries',
+    },
+    {
+      icon: FileSpreadsheet,
+      label: 'Relevés',
+      path: '/statements',
+    },
+    {
+      icon: Receipt,
+      label: 'Factures',
+      submenu: [
+        {
+          label: 'Paiements',
+          path: '/payments',
+        },
+        {
+          label: 'Factures DGI & CIM',
+          path: '/moroccan-bills',
+        },
+        {
+          label: 'Reçus',
+          path: '/receipts',
+        },
+      ]
+    },
+    {
+      icon: Settings,
+      label: 'Paramètres',
+      path: '/settings',
+    },
+  ];
+
   return (
-    <aside 
-      className={`fixed inset-y-0 left-0 z-10 flex w-64 flex-col bg-white shadow-nav transition-transform duration-300 ease-in-out md:relative md:shadow-none ${
-        open ? 'translate-x-0' : '-translate-x-full md:w-20 md:translate-x-0'
-      }`}
-    >
-      <div className="flex h-16 items-center justify-between px-4">
-        <Link to="/" className="flex items-center space-x-2">
-          {open ? (
-            <>
-              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bank-primary text-white">
-                <DollarSign size={20} />
-              </div>
-              <span className="text-xl font-bold text-bank-dark">BankWise</span>
-            </>
-          ) : (
-            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bank-primary text-white">
-              <DollarSign size={20} />
-            </div>
-          )}
+    <div className="flex h-full w-64 flex-col border-r border-bank-gray-light bg-white py-4">
+      <div className="px-6">
+        <Link to="/dashboard" className="mb-6 flex items-center space-x-2">
+          <img src="/logo.svg" alt="Bank Logo" className="h-8" />
+          <span className="font-bold">Bank</span>
         </Link>
       </div>
-
-      <div className="flex-1 overflow-auto py-4">
-        <nav className="space-y-1 px-2">
-          <TooltipProvider>
-            {menuItems.map((item) => (
-              <Tooltip key={item.path}>
-                <TooltipTrigger asChild>
-                  <Link
-                    to={item.path}
-                    className={`group flex items-center rounded-xl p-3 transition-all duration-200 ease-in-out ${
-                      isActive(item.path)
-                        ? 'bg-bank-primary text-white'
-                        : 'text-bank-gray-dark hover:bg-bank-gray-light'
-                    }`}
-                  >
-                    <item.icon size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
-                    {open && <span className="font-medium">{item.label}</span>}
-                  </Link>
-                </TooltipTrigger>
-                {!open && (
-                  <TooltipContent side="right">
-                    {item.label}
-                  </TooltipContent>
+      
+      <div className="flex-1 space-y-1 px-2">
+        {menuItems.map((item, index) => (
+          item.submenu ? (
+            <div key={index} className="space-y-1">
+              <Button
+                variant="ghost"
+                className={cn(
+                  "flex w-full items-center justify-start space-x-2 rounded-md font-medium hover:bg-bank-gray-light",
+                  isSubmenuActive(item.submenu) ? "bg-bank-gray-light" : "text-bank-dark"
                 )}
-              </Tooltip>
-            ))}
-          </TooltipProvider>
-        </nav>
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </Button>
+              <div className="ml-6 space-y-1">
+                {item.submenu.map((sub, subIndex) => (
+                  <Link key={subIndex} to={sub.path}>
+                    <Button
+                      variant="ghost"
+                      className={cn(
+                        "flex w-full items-center justify-start space-x-2 rounded-md pl-4 font-medium hover:bg-bank-gray-light",
+                        isActive(sub.path) ? "bg-bank-gray-light" : "text-bank-dark"
+                      )}
+                    >
+                      <span>{sub.label}</span>
+                    </Button>
+                  </Link>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <Link key={index} to={item.path}>
+              <Button
+                variant="ghost"
+                className={cn(
+                  "flex w-full items-center justify-start space-x-2 rounded-md font-medium hover:bg-bank-gray-light",
+                  isActive(item.path) ? "bg-bank-gray-light" : "text-bank-dark"
+                )}
+              >
+                <item.icon className="h-4 w-4" />
+                <span>{item.label}</span>
+              </Button>
+            </Link>
+          )
+        ))}
       </div>
 
       <div className="border-t border-bank-gray-light p-4">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link 
-                to="/settings" 
-                className={`flex items-center rounded-xl p-3 transition-all duration-200 ease-in-out ${
-                  isActive('/settings') 
-                    ? 'bg-bank-primary text-white' 
-                    : 'text-bank-gray-dark hover:bg-bank-gray-light'
-                }`}
-              >
-                <Settings size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
-                {open && <span className="font-medium">Paramètres</span>}
-              </Link>
-            </TooltipTrigger>
-            {!open && (
-              <TooltipContent side="right">
-                Paramètres
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
-        
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <button 
-                onClick={handleLogout}
-                className={`mt-2 flex w-full items-center rounded-xl p-3 text-bank-gray-dark transition-all duration-200 ease-in-out hover:bg-bank-gray-light`}
-              >
-                <LogOut size={20} className={`${open ? 'mr-3' : 'mx-auto'}`} />
-                {open && <span className="font-medium">Déconnexion</span>}
-              </button>
-            </TooltipTrigger>
-            {!open && (
-              <TooltipContent side="right">
-                Déconnexion
-              </TooltipContent>
-            )}
-          </Tooltip>
-        </TooltipProvider>
+        <Button variant="outline" className="w-full" onClick={logout}>
+          <LogOut className="mr-2 h-4 w-4" />
+          Déconnexion
+        </Button>
       </div>
-    </aside>
+    </div>
   );
 };
 

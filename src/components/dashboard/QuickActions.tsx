@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Send, Users, FileText, CreditCard } from 'lucide-react';
+import { Send, Users, FileText, CreditCard, Receipt } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 const QuickActions: React.FC = () => {
@@ -33,10 +33,17 @@ const QuickActions: React.FC = () => {
       path: '/payments',
       color: 'bg-orange-100 text-orange-600',
     },
+    {
+      icon: Receipt,
+      title: 'Factures DGI & CIM',
+      description: 'Payez vos impôts et factures marocaines',
+      path: '/moroccan-bills',
+      color: 'bg-red-100 text-red-600',
+    },
   ];
 
   return (
-    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
       {actions.map((action, index) => (
         <Link
           key={index}

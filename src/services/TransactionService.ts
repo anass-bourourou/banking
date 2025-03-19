@@ -1,3 +1,4 @@
+
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -20,6 +21,7 @@ export interface TransferData {
   isScheduled?: boolean;
   scheduledDate?: string;
   recipients?: Array<{id: string, amount: number}>;
+  fees?: number;
 }
 
 export class TransactionService extends BaseService {
@@ -97,8 +99,11 @@ export class TransactionService extends BaseService {
         if (fromError) throw fromError;
         if (!fromAccount) throw new Error('Compte source non trouvé');
 
+        // Calculate the total amount with fees if applicable
+        const totalAmount = data.amount + (data.fees || 0);
+
         // Validate sufficient funds
-        if (fromAccount.balance < data.amount) {
+        if (fromAccount.balance < totalAmount) {
           throw new Error('Solde insuffisant pour effectuer ce virement');
         }
 
@@ -110,7 +115,7 @@ export class TransactionService extends BaseService {
         const { error: updateError } = await TransactionService.getSupabase()!
           .from('accounts')
           .update({ 
-            balance: fromAccount.balance - data.amount,
+            balance: fromAccount.balance - totalAmount,
             updated_at: new Date().toISOString()
           })
           .eq('id', data.fromAccount);
@@ -133,7 +138,24 @@ export class TransactionService extends BaseService {
 
         if (transactionError) throw transactionError;
 
-        // 3. Create a notification for the transfer
+        // 3. Record the fees transaction if applicable
+        if (data.fees && data.fees > 0) {
+          const { error: feesError } = await TransactionService.getSupabase()!
+            .from('transactions')
+            .insert({
+              description: 'Frais de virement instantané',
+              amount: data.fees,
+              type: 'debit',
+              date: new Date().toLocaleDateString('fr-FR'),
+              account_id: data.fromAccount,
+              category: 'Frais bancaires',
+              created_at: new Date().toISOString()
+            });
+
+          if (feesError) throw feesError;
+        }
+
+        // 4. Create a notification for the transfer
         await TransactionService.getSupabase()!
           .from('notifications')
           .insert({
@@ -190,6 +212,11 @@ export class TransactionService extends BaseService {
           totalAmount = data.amount;
         }
 
+        // Add fees if applicable
+        if (data.fees) {
+          totalAmount += data.fees;
+        }
+
         // Validate sufficient funds
         if (fromAccount.balance < totalAmount) {
           throw new Error('Solde insuffisant pour effectuer ces virements');
@@ -211,7 +238,7 @@ export class TransactionService extends BaseService {
           .from('transactions')
           .insert({
             description: 'Virement de masse',
-            amount: totalAmount,
+            amount: data.recipients ? totalAmount - (data.fees || 0) : data.amount,
             type: 'debit',
             date: new Date().toLocaleDateString('fr-FR'),
             account_id: data.fromAccount,
@@ -222,12 +249,29 @@ export class TransactionService extends BaseService {
 
         if (transactionError) throw transactionError;
 
+        // Record fees transaction if applicable
+        if (data.fees && data.fees > 0) {
+          const { error: feesError } = await TransactionService.getSupabase()!
+            .from('transactions')
+            .insert({
+              description: 'Frais de virement de masse',
+              amount: data.fees,
+              type: 'debit',
+              date: new Date().toLocaleDateString('fr-FR'),
+              account_id: data.fromAccount,
+              category: 'Frais bancaires',
+              created_at: new Date().toISOString()
+            });
+
+          if (feesError) throw feesError;
+        }
+
         // Create notification
         await TransactionService.getSupabase()!
           .from('notifications')
           .insert({
             title: 'Virements multiples effectués',
-            message: `Virement de masse de ${totalAmount.toLocaleString('fr-MA')} MAD effectué avec succès.`,
+            message: `Virement de masse de ${(totalAmount - (data.fees || 0)).toLocaleString('fr-MA')} MAD effectué avec succès.`,
             type: 'info',
             date: new Date().toISOString(),
             read: false,
@@ -240,7 +284,7 @@ export class TransactionService extends BaseService {
           transferId: transaction?.id,
           date: new Date().toLocaleDateString('fr-FR'),
           status: 'completed',
-          totalAmount,
+          totalAmount: totalAmount - (data.fees || 0),
           recipientsCount: data.recipients?.length || 1
         };
       } else {
