@@ -43,7 +43,9 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, showWelcomeMessage = tr
 
   return (
     <div className="flex h-screen w-full overflow-hidden bg-bank-light">
-      <Sidebar open={sidebarOpen} />
+      <div className={sidebarOpen ? "block" : "hidden md:block"}>
+        <Sidebar />
+      </div>
       
       <div className="flex flex-1 flex-col overflow-hidden">
         <Header toggleSidebar={toggleSidebar} sidebarOpen={sidebarOpen} />

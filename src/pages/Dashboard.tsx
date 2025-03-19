@@ -10,13 +10,32 @@ import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import { Separator } from '@/components/ui/separator';
 
 const Dashboard: React.FC = () => {
+  // Sample spending data for the chart
+  const spendingData = [
+    { name: 'Alimentation', value: 3500, color: '#4CAF50' },
+    { name: 'Transport', value: 1800, color: '#2196F3' },
+    { name: 'Logement', value: 6200, color: '#FF9800' },
+    { name: 'Loisirs', value: 1200, color: '#9C27B0' },
+    { name: 'Santé', value: 800, color: '#F44336' }
+  ];
+
   return (
     <div className="flex flex-col space-y-6">
       <h1 className="text-3xl font-bold">Tableau de bord</h1>
       
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <BalanceCard />
+          <BalanceCard 
+            accountType="Compte Principal"
+            accountNumber="123456789012"
+            balance={24350.00}
+            currency="MAD"
+            change={{
+              amount: 530.25,
+              percentage: 2.3,
+              increase: true
+            }}
+          />
         </div>
         <div>
           <NotificationsPanel />
@@ -29,7 +48,7 @@ const Dashboard: React.FC = () => {
         <div className="lg:col-span-2">
           <Card className="p-6">
             <h2 className="mb-4 text-xl font-semibold">Dépenses mensuelles</h2>
-            <SpendingChart />
+            <SpendingChart data={spendingData} />
           </Card>
         </div>
         <div>

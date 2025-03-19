@@ -17,7 +17,12 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 
-const Sidebar = () => {
+// Add the interface to accept the open prop if needed
+interface SidebarProps {
+  open?: boolean;
+}
+
+const Sidebar: React.FC<SidebarProps> = () => {
   const location = useLocation();
   const { logout } = useAuth();
 
