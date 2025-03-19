@@ -30,7 +30,7 @@ export class StatementService extends BaseService {
             file_path,
             status,
             download_count,
-            accounts!inner(name)
+            accounts (name)
           `)
           .order('date', { ascending: false });
 
@@ -44,7 +44,7 @@ export class StatementService extends BaseService {
         const statements: BankStatement[] = data.map(item => ({
           id: item.id,
           accountId: item.account_id,
-          accountName: item.accounts.name,
+          accountName: item.accounts?.[0]?.name || 'Unknown Account',
           period: item.period,
           date: item.date,
           fileUrl: item.file_path,
@@ -84,7 +84,7 @@ export class StatementService extends BaseService {
             file_path,
             status,
             download_count,
-            accounts!inner(name)
+            accounts (name)
           `)
           .eq('id', id)
           .single();
@@ -98,7 +98,7 @@ export class StatementService extends BaseService {
         return {
           id: data.id,
           accountId: data.account_id,
-          accountName: data.accounts.name,
+          accountName: data.accounts?.[0]?.name || 'Unknown Account',
           period: data.period,
           date: data.date,
           fileUrl: data.file_path,
