@@ -55,8 +55,8 @@ const InstantTransferForm: React.FC<InstantTransferFormProps> = ({
     const amount = parseFloat(transferAmount);
     
     const transferData: TransferData = {
-      fromAccount: parseInt(sourceAccount),
-      toAccount: recipient,
+      fromAccountId: parseInt(sourceAccount),
+      beneficiaryId: recipient,
       amount: amount,
       description: description || 'Virement instantané',
       isInstant: true,

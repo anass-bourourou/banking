@@ -24,12 +24,12 @@ export class StatementService extends BaseService {
           .from('statements')
           .select(`
             id, 
-            account_id as accountId,
+            account_id,
             period,
             date,
-            file_path as fileUrl,
+            file_path,
             status,
-            download_count as downloadCount,
+            download_count,
             accounts!inner(name)
           `)
           .order('date', { ascending: false });
@@ -43,13 +43,13 @@ export class StatementService extends BaseService {
         // Transform data to match our BankStatement interface
         const statements: BankStatement[] = data.map(item => ({
           id: item.id,
-          accountId: item.accountId,
+          accountId: item.account_id,
           accountName: item.accounts.name,
           period: item.period,
           date: item.date,
-          fileUrl: item.fileUrl,
+          fileUrl: item.file_path,
           status: item.status,
-          downloadCount: item.downloadCount
+          downloadCount: item.download_count
         }));
 
         return statements;
@@ -78,12 +78,12 @@ export class StatementService extends BaseService {
           .from('statements')
           .select(`
             id, 
-            account_id as accountId,
+            account_id,
             period,
             date,
-            file_path as fileUrl,
+            file_path,
             status,
-            download_count as downloadCount,
+            download_count,
             accounts!inner(name)
           `)
           .eq('id', id)
@@ -97,13 +97,13 @@ export class StatementService extends BaseService {
 
         return {
           id: data.id,
-          accountId: data.accountId,
+          accountId: data.account_id,
           accountName: data.accounts.name,
           period: data.period,
           date: data.date,
-          fileUrl: data.fileUrl,
+          fileUrl: data.file_path,
           status: data.status,
-          downloadCount: data.downloadCount
+          downloadCount: data.download_count
         };
       } else {
         // Use mock API

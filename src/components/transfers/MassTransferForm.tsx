@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -69,8 +68,7 @@ const MassTransferForm: React.FC<MassTransferFormProps> = ({
     }
     
     const transferData: TransferData = {
-      fromAccount: parseInt(sourceAccount),
-      toAccount: "multiple",
+      fromAccountId: parseInt(sourceAccount),
       amount: recipients.reduce((sum, recipient) => sum + parseFloat(recipient.amount), 0),
       description: 'Virement de masse',
       recipients: recipients.map(r => ({

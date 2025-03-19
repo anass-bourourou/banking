@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -36,7 +35,7 @@ const MoroccanBills = () => {
   });
   
   // Filtrer les factures en fonction des critères
-  const filteredBills = bills.filter(bill => {
+  const filteredBills = bills.filter((bill: Bill) => {
     const matchesSearch = 
       bill.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
       bill.description.toLowerCase().includes(searchTerm.toLowerCase());

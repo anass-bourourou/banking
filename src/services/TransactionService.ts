@@ -30,6 +30,8 @@ export interface TransferData {
   scheduledDate?: string;
   isRecurring?: boolean;
   recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
+  recipients?: { id: string; amount: number }[];
+  fees?: number;
 }
 
 export class TransactionService extends BaseService {
@@ -185,7 +187,7 @@ export class TransactionService extends BaseService {
         if (debitError) throw debitError;
 
         // 5. Create a notification
-        await NotificationService.createNotification({
+        await NotificationService.addNotification({
           title: 'Transfert effectué',
           message: `Transfert de ${transferData.amount.toLocaleString('fr-MA')} MAD effectué avec succès.`,
           type: 'info',
@@ -202,8 +204,8 @@ export class TransactionService extends BaseService {
         const response = await fetchWithAuth('/transfers', {
           method: 'POST',
           body: JSON.stringify({
-            fromAccount: transferData.fromAccountId,
-            toAccount: transferData.toAccountId || transferData.beneficiaryId,
+            fromAccountId: transferData.fromAccountId,
+            toAccountId: transferData.toAccountId || transferData.beneficiaryId,
             amount: transferData.amount,
             description: transferData.description
           })
@@ -294,20 +296,54 @@ export class TransactionService extends BaseService {
   }
 
   // Créer une masse de virements
-  static async createMassTransfer(transfers: TransferData[]): Promise<any> {
+  static async createMassTransfer(transfers: TransferData): Promise<any> {
     try {
-      // Pour la démo, on exécute chaque transfert individuellement
-      const results = [];
-      for (const transfer of transfers) {
-        const result = await TransactionService.createTransfer(transfer);
-        results.push(result);
+      // Pour la démo, on considère que transfers contient déjà un tableau de bénéficiaires
+      if (!transfers.recipients || transfers.recipients.length === 0) {
+        throw new Error('Aucun bénéficiaire spécifié pour le virement en masse');
       }
 
-      toast.success('Virements en masse effectués', {
-        description: `${results.length} virements ont été traités avec succès.`
-      });
+      if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
+        // On traite chaque bénéficiaire comme un transfert individuel
+        const results = [];
+        for (const recipient of transfers.recipients) {
+          const singleTransfer: TransferData = {
+            fromAccountId: transfers.fromAccountId,
+            beneficiaryId: recipient.id,
+            amount: recipient.amount,
+            description: transfers.description || 'Virement de masse'
+          };
+          
+          const result = await TransactionService.createTransfer(singleTransfer);
+          results.push(result);
+        }
 
-      return results;
+        toast.success('Virements en masse effectués', {
+          description: `${results.length} virements ont été traités avec succès.`
+        });
+
+        return {
+          recipientsCount: results.length,
+          totalAmount: transfers.amount
+        };
+      } else {
+        // Mock API
+        const response = await fetchWithAuth('/mass-transfers', {
+          method: 'POST',
+          body: JSON.stringify(transfers)
+        });
+
+        const data = await response.json();
+        
+        toast.success('Virements en masse effectués', {
+          description: `${transfers.recipients?.length} virements ont été traités avec succès.`
+        });
+        
+        return {
+          recipientsCount: transfers.recipients?.length || 0,
+          totalAmount: transfers.amount
+        };
+      }
     } catch (error) {
       console.error('Error creating mass transfers:', error);
       toast.error('Erreur lors des virements en masse');

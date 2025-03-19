@@ -2,7 +2,9 @@
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
+import { Account } from './AccountService';
 import { TransactionService } from './TransactionService';
+import { NotificationService } from './NotificationService';
 
 export interface Bill {
   id: string;
@@ -13,61 +15,33 @@ export interface Bill {
   status: 'pending' | 'paid';
   paymentDate?: string;
   description: string;
-  user_id: string;
-  created_at: string;
+  user_id?: string;
 }
 
 export class BillService extends BaseService {
-  static async getBills(): Promise<Bill[]> {
+  static async getMoroccanBills(): Promise<Bill[]> {
     try {
       if (BillService.useSupabase() && BillService.getSupabase()) {
         const { data, error } = await BillService.getSupabase()!
           .from('bills')
           .select('*')
-          .order('dueDate', { ascending: true });
+          .order('dueDate', { ascending: false });
 
         if (error) throw error;
         return data || [];
       } else {
-        // Mock data for demo
-        return [
-          {
-            id: 'bill-1',
-            reference: 'EDF-230930',
-            type: 'OTHER',
-            amount: 728.50,
-            dueDate: '2023-10-25',
-            status: 'pending',
-            description: 'EDF Électricité',
-            user_id: 'user-1',
-            created_at: '2023-10-01T10:00:00Z'
-          },
-          {
-            id: 'bill-2',
-            reference: 'TEL-231105',
-            type: 'OTHER',
-            amount: 399.99,
-            dueDate: '2023-11-05',
-            status: 'pending',
-            description: 'Orange Télécom',
-            user_id: 'user-1',
-            created_at: '2023-10-05T14:30:00Z'
-          },
-          {
-            id: 'bill-3',
-            reference: 'ASS-231115',
-            type: 'OTHER',
-            amount: 653.00,
-            dueDate: '2023-11-15',
-            status: 'pending',
-            description: 'Assurance Auto',
-            user_id: 'user-1',
-            created_at: '2023-10-10T09:15:00Z'
-          }
-        ];
+        // Use mock API
+        const response = await fetchWithAuth('/moroccan-bills');
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          return data as Bill[];
+        }
+        
+        return [];
       }
     } catch (error) {
-      console.error('Error fetching bills:', error);
+      console.error('Error fetching Moroccan bills:', error);
       toast.error('Impossible de récupérer les factures');
       throw new Error('Impossible de récupérer les factures');
     }
@@ -78,7 +52,7 @@ export class BillService extends BaseService {
       if (BillService.useSupabase() && BillService.getSupabase()) {
         const supabase = BillService.getSupabase()!;
         
-        // 1. Get the bill
+        // Get bill details
         const { data: bill, error: billError } = await supabase
           .from('bills')
           .select('*')
@@ -87,110 +61,87 @@ export class BillService extends BaseService {
 
         if (billError) throw billError;
         if (!bill) throw new Error('Facture non trouvée');
-        if (bill.status === 'paid') throw new Error('Cette facture a déjà été payée');
 
-        // 2. Update the bill status
-        const now = new Date().toISOString();
-        const { error: updateError } = await supabase
+        // Get account details
+        const { data: account, error: accountError } = await supabase
+          .from('accounts')
+          .select('balance')
+          .eq('id', accountId)
+          .single();
+
+        if (accountError) throw accountError;
+        if (!account) throw new Error('Compte non trouvé');
+
+        // Check sufficient balance
+        if (account.balance < bill.amount) {
+          throw new Error('Solde insuffisant pour effectuer ce paiement');
+        }
+
+        // Update bill status
+        const { error: updateBillError } = await supabase
           .from('bills')
-          .update({
+          .update({ 
             status: 'paid',
-            paymentDate: now
+            paymentDate: new Date().toISOString()
           })
           .eq('id', billId);
 
-        if (updateError) throw updateError;
+        if (updateBillError) throw updateBillError;
 
-        // 3. Update account balance
-        await TransactionService.updateAccountBalance(accountId, bill.amount, false);
+        // Deduct amount from account
+        const newBalance = account.balance - bill.amount;
+        const { error: updateAccountError } = await supabase
+          .from('accounts')
+          .update({ balance: newBalance })
+          .eq('id', accountId);
 
-        // 4. Create transaction record
+        if (updateAccountError) throw updateAccountError;
+
+        // Create transaction record
+        const transaction = {
+          description: `Paiement ${bill.type}: ${bill.description}`,
+          amount: bill.amount,
+          type: 'debit' as const,
+          date: new Date().toISOString(),
+          account_id: accountId,
+          status: 'completed' as const,
+          category: 'bills',
+          reference_id: bill.reference
+        };
+
         const { error: transactionError } = await supabase
           .from('transactions')
-          .insert({
-            account_id: accountId,
-            description: `Paiement facture: ${bill.description}`,
-            amount: bill.amount,
-            type: 'debit',
-            date: now,
-            status: 'completed',
-            category: 'Facture',
-            reference_id: bill.reference
-          });
+          .insert(transaction);
 
         if (transactionError) throw transactionError;
 
-        toast.success('Facture payée avec succès', {
-          description: `Paiement de ${bill.amount.toLocaleString('fr-MA')} MAD pour ${bill.description}`
+        // Create notification
+        await NotificationService.addNotification({
+          title: 'Facture payée',
+          message: `Votre facture ${bill.type} de ${bill.amount.toLocaleString('fr-MA')} MAD a été payée avec succès.`,
+          type: 'info'
+        });
+
+        toast.success('Paiement réussi', {
+          description: `Facture ${bill.reference} payée avec succès`
         });
       } else {
-        // Just simulate success for mock
-        toast.success('Facture payée avec succès', {
-          description: `Le paiement a été effectué`
+        // Mock API
+        await fetchWithAuth(`/bills/${billId}/pay`, {
+          method: 'POST',
+          body: JSON.stringify({ accountId })
+        });
+        
+        toast.success('Paiement réussi', {
+          description: `Facture payée avec succès`
         });
       }
     } catch (error) {
       console.error('Error paying bill:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Impossible de payer la facture';
-      toast.error('Erreur de paiement', {
-        description: errorMessage
+      toast.error('Erreur lors du paiement', {
+        description: error instanceof Error ? error.message : 'Une erreur est survenue'
       });
       throw error;
-    }
-  }
-
-  static async addBill(billData: Omit<Bill, 'id' | 'status' | 'user_id' | 'created_at'>): Promise<Bill> {
-    try {
-      if (BillService.useSupabase() && BillService.getSupabase()) {
-        const supabase = BillService.getSupabase()!;
-        
-        // Get current user
-        const { data: { user }, error: userError } = await supabase.auth.getUser();
-        if (userError) throw userError;
-        if (!user) throw new Error('Utilisateur non connecté');
-
-        const { data, error } = await supabase
-          .from('bills')
-          .insert({
-            ...billData,
-            status: 'pending',
-            user_id: user.id,
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-
-        if (error) throw error;
-        if (!data) throw new Error('Erreur lors de l\'ajout de la facture');
-
-        toast.success('Facture ajoutée avec succès', {
-          description: `La facture ${billData.description} a été ajoutée`
-        });
-
-        return data;
-      } else {
-        // Mock response
-        const id = `bill-${Date.now()}`;
-        const now = new Date().toISOString();
-        
-        const newBill: Bill = {
-          ...billData,
-          id,
-          status: 'pending',
-          user_id: 'user-1',
-          created_at: now
-        };
-        
-        toast.success('Facture ajoutée avec succès', {
-          description: `La facture ${billData.description} a été ajoutée`
-        });
-        
-        return newBill;
-      }
-    } catch (error) {
-      console.error('Error adding bill:', error);
-      toast.error('Impossible d\'ajouter la facture');
-      throw new Error('Impossible d\'ajouter la facture');
     }
   }
 }

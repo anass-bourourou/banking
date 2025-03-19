@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -112,11 +111,10 @@ const Transfers = () => {
       }
 
       const transferData: TransferData = {
-        fromAccount: selectedAccount.id,
-        toAccount: selectedBeneficiary.id,
+        fromAccountId: selectedAccount.id,
+        beneficiaryId: selectedBeneficiary.id,
         amount: parseFloat(transferAmount),
         description: description || undefined,
-        isScheduled: transferDate ? true : false,
         scheduledDate: transferDate || undefined
       };
 

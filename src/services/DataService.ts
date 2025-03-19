@@ -31,7 +31,7 @@ export class DataService {
   static getAccounts = AccountService.getAccounts;
   static getAccountById = AccountService.getAccountById;
   static getRecentTransactions = TransactionService.getRecentTransactions;
-  static getTransactionsByAccount = TransactionService.getTransactionsByAccount;
+  static getTransactionsByAccount = TransactionService.getTransactionsByAccountId;
   static createTransfer = TransactionService.createTransfer;
   static getBeneficiaries = BeneficiaryService.getBeneficiaries;
   static addBeneficiary = BeneficiaryService.addBeneficiary;
