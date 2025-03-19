@@ -2,6 +2,7 @@
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
+import { TransactionService } from './TransactionService';
 
 export interface Bill {
   id: string;
@@ -12,79 +13,73 @@ export interface Bill {
   status: 'pending' | 'paid';
   paymentDate?: string;
   description: string;
+  user_id: string;
+  created_at: string;
 }
 
 export class BillService extends BaseService {
-  static async getMoroccanBills(): Promise<Bill[]> {
+  static async getBills(): Promise<Bill[]> {
     try {
       if (BillService.useSupabase() && BillService.getSupabase()) {
-        // Get current user
-        const { data: { user }, error: userError } = await BillService.getSupabase()!.auth.getUser();
-        if (userError) throw userError;
-        if (!user) throw new Error('Utilisateur non connecté');
-
         const { data, error } = await BillService.getSupabase()!
           .from('bills')
           .select('*')
-          .eq('user_id', user.id)
-          .in('type', ['DGI', 'CIM'])
-          .order('dueDate', { ascending: false });
+          .order('dueDate', { ascending: true });
 
         if (error) throw error;
-        return data as Bill[] || [];
+        return data || [];
       } else {
-        // Utiliser des données fictives pour la démonstration
+        // Mock data for demo
         return [
           {
-            id: 'dgi-001',
-            reference: 'DGI-2023-7845612',
-            type: 'DGI',
-            amount: 1250.00,
-            dueDate: '2023-12-15',
+            id: 'bill-1',
+            reference: 'EDF-230930',
+            type: 'OTHER',
+            amount: 728.50,
+            dueDate: '2023-10-25',
             status: 'pending',
-            description: 'Impôt sur le revenu - 4ème trimestre 2023'
+            description: 'EDF Électricité',
+            user_id: 'user-1',
+            created_at: '2023-10-01T10:00:00Z'
           },
           {
-            id: 'dgi-002',
-            reference: 'DGI-2023-7845789',
-            type: 'DGI',
-            amount: 4500.00,
-            dueDate: '2023-11-30',
+            id: 'bill-2',
+            reference: 'TEL-231105',
+            type: 'OTHER',
+            amount: 399.99,
+            dueDate: '2023-11-05',
             status: 'pending',
-            description: 'TVA - 3ème trimestre 2023'
+            description: 'Orange Télécom',
+            user_id: 'user-1',
+            created_at: '2023-10-05T14:30:00Z'
           },
           {
-            id: 'cim-001',
-            reference: 'CIM-2023-985412',
-            type: 'CIM',
-            amount: 560.75,
-            dueDate: '2023-12-10',
+            id: 'bill-3',
+            reference: 'ASS-231115',
+            type: 'OTHER',
+            amount: 653.00,
+            dueDate: '2023-11-15',
             status: 'pending',
-            description: 'Facture Eau et Assainissement - Novembre 2023'
-          },
-          {
-            id: 'cim-002',
-            reference: 'CIM-2023-986523',
-            type: 'CIM',
-            amount: 425.30,
-            dueDate: '2023-11-25',
-            status: 'pending',
-            description: 'Facture Eau et Assainissement - Octobre 2023'
+            description: 'Assurance Auto',
+            user_id: 'user-1',
+            created_at: '2023-10-10T09:15:00Z'
           }
         ];
       }
     } catch (error) {
-      console.error('Error fetching Moroccan bills:', error);
+      console.error('Error fetching bills:', error);
       toast.error('Impossible de récupérer les factures');
-      return [];
+      throw new Error('Impossible de récupérer les factures');
     }
   }
 
-  static async payBill(billId: string, accountId: number): Promise<boolean> {
+  static async payBill(billId: string, accountId: number): Promise<void> {
     try {
       if (BillService.useSupabase() && BillService.getSupabase()) {
-        // Obtenir les détails de la facture
-        const { data: bill, error: billError } = await BillService.getSupabase()!
+        const supabase = BillService.getSupabase()!;
+        
+        // 1. Get the bill
+        const { data: bill, error: billError } = await supabase
           .from('bills')
           .select('*')
           .eq('id', billId)
@@ -92,194 +87,110 @@ export class BillService extends BaseService {
 
         if (billError) throw billError;
         if (!bill) throw new Error('Facture non trouvée');
+        if (bill.status === 'paid') throw new Error('Cette facture a déjà été payée');
 
-        // Vérifier si la facture n'est pas déjà payée
-        if (bill.status === 'paid') {
-          toast.info('Cette facture a déjà été payée', {
-            description: `Paiement effectué le ${new Date(bill.paymentDate).toLocaleDateString('fr-FR')}`
-          });
-          return true;
-        }
-
-        // Obtenir les détails du compte
-        const { data: account, error: accountError } = await BillService.getSupabase()!
-          .from('accounts')
-          .select('*')
-          .eq('id', accountId)
-          .single();
-
-        if (accountError) throw accountError;
-        if (!account) throw new Error('Compte non trouvé');
-
-        // Vérifier si le solde est suffisant
-        if (account.balance < bill.amount) {
-          toast.error('Solde insuffisant', {
-            description: 'Votre compte ne dispose pas de fonds suffisants pour payer cette facture'
-          });
-          throw new Error('Solde insuffisant pour payer cette facture');
-        }
-
-        // Créer une transaction Supabase
-        const paymentDate = new Date().toISOString();
-
-        // 1. Mise à jour du solde du compte
-        const { error: updateError } = await BillService.getSupabase()!
-          .from('accounts')
-          .update({ 
-            balance: account.balance - bill.amount,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', accountId);
-
-        if (updateError) throw updateError;
-
-        // 2. Mise à jour du statut de la facture
-        const { error: billUpdateError } = await BillService.getSupabase()!
+        // 2. Update the bill status
+        const now = new Date().toISOString();
+        const { error: updateError } = await supabase
           .from('bills')
-          .update({ 
+          .update({
             status: 'paid',
-            paymentDate: paymentDate
+            paymentDate: now
           })
           .eq('id', billId);
 
-        if (billUpdateError) throw billUpdateError;
+        if (updateError) throw updateError;
 
-        // 3. Enregistrer la transaction
-        const { data: transaction, error: transactionError } = await BillService.getSupabase()!
+        // 3. Update account balance
+        await TransactionService.updateAccountBalance(accountId, bill.amount, false);
+
+        // 4. Create transaction record
+        const { error: transactionError } = await supabase
           .from('transactions')
           .insert({
-            description: `Paiement ${bill.type} - ${bill.reference}`,
+            account_id: accountId,
+            description: `Paiement facture: ${bill.description}`,
             amount: bill.amount,
             type: 'debit',
-            date: new Date().toISOString(),
-            account_id: accountId,
-            category: 'Factures',
+            date: now,
             status: 'completed',
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+            category: 'Facture',
+            reference_id: bill.reference
+          });
 
         if (transactionError) throw transactionError;
 
-        // 4. Créer une notification
-        await BillService.getSupabase()!
-          .from('notifications')
-          .insert({
-            title: `Paiement ${bill.type} effectué`,
-            message: `Votre paiement de ${bill.amount.toLocaleString('fr-MA')} MAD pour la facture ${bill.reference} a été effectué avec succès.`,
-            type: 'info',
-            date: new Date().toISOString(),
-            read: false,
-            user_id: account.user_id,
-            transaction_id: transaction.id
-          });
-
-        toast.success('Paiement effectué avec succès', {
-          description: `Votre facture ${bill.reference} a été payée`
+        toast.success('Facture payée avec succès', {
+          description: `Paiement de ${bill.amount.toLocaleString('fr-MA')} MAD pour ${bill.description}`
         });
-
-        return true;
       } else {
-        // Simulation de paiement pour la démo
-        console.log(`Simulation de paiement de la facture ${billId} depuis le compte ${accountId}`);
-        
-        toast.success('Paiement effectué avec succès', {
-          description: 'Votre facture a été payée'
+        // Just simulate success for mock
+        toast.success('Facture payée avec succès', {
+          description: `Le paiement a été effectué`
         });
-        
-        return true;
       }
     } catch (error) {
       console.error('Error paying bill:', error);
-      toast.error('Impossible de payer la facture', {
-        description: error instanceof Error ? error.message : 'Une erreur est survenue lors du paiement'
+      const errorMessage = error instanceof Error ? error.message : 'Impossible de payer la facture';
+      toast.error('Erreur de paiement', {
+        description: errorMessage
       });
       throw error;
     }
   }
 
-  static async getAllUserBills(): Promise<Bill[]> {
+  static async addBill(billData: Omit<Bill, 'id' | 'status' | 'user_id' | 'created_at'>): Promise<Bill> {
     try {
       if (BillService.useSupabase() && BillService.getSupabase()) {
+        const supabase = BillService.getSupabase()!;
+        
         // Get current user
-        const { data: { user }, error: userError } = await BillService.getSupabase()!.auth.getUser();
+        const { data: { user }, error: userError } = await supabase.auth.getUser();
         if (userError) throw userError;
         if (!user) throw new Error('Utilisateur non connecté');
 
-        const { data, error } = await BillService.getSupabase()!
+        const { data, error } = await supabase
           .from('bills')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('dueDate', { ascending: true });
+          .insert({
+            ...billData,
+            status: 'pending',
+            user_id: user.id,
+            created_at: new Date().toISOString()
+          })
+          .select()
+          .single();
 
         if (error) throw error;
-        return data as Bill[] || [];
+        if (!data) throw new Error('Erreur lors de l\'ajout de la facture');
+
+        toast.success('Facture ajoutée avec succès', {
+          description: `La facture ${billData.description} a été ajoutée`
+        });
+
+        return data;
       } else {
-        // Utiliser des données fictives pour la démonstration, y compris les factures payées
-        return [
-          {
-            id: 'dgi-001',
-            reference: 'DGI-2023-7845612',
-            type: 'DGI',
-            amount: 1250.00,
-            dueDate: '2023-12-15',
-            status: 'pending',
-            description: 'Impôt sur le revenu - 4ème trimestre 2023'
-          },
-          {
-            id: 'dgi-002',
-            reference: 'DGI-2023-7845789',
-            type: 'DGI',
-            amount: 4500.00,
-            dueDate: '2023-11-30',
-            status: 'pending',
-            description: 'TVA - 3ème trimestre 2023'
-          },
-          {
-            id: 'cim-001',
-            reference: 'CIM-2023-985412',
-            type: 'CIM',
-            amount: 560.75,
-            dueDate: '2023-12-10',
-            status: 'pending',
-            description: 'Facture Eau et Assainissement - Novembre 2023'
-          },
-          {
-            id: 'cim-002',
-            reference: 'CIM-2023-986523',
-            type: 'CIM',
-            amount: 425.30,
-            dueDate: '2023-11-25',
-            status: 'pending',
-            description: 'Facture Eau et Assainissement - Octobre 2023'
-          },
-          {
-            id: 'dgi-003',
-            reference: 'DGI-2023-7845123',
-            type: 'DGI',
-            amount: 2750.00,
-            dueDate: '2023-10-15',
-            status: 'paid',
-            paymentDate: '2023-10-10',
-            description: 'Impôt sur le revenu - 3ème trimestre 2023'
-          },
-          {
-            id: 'cim-003',
-            reference: 'CIM-2023-985001',
-            type: 'CIM',
-            amount: 430.50,
-            dueDate: '2023-10-10',
-            status: 'paid',
-            paymentDate: '2023-10-05',
-            description: 'Facture Eau et Assainissement - Septembre 2023'
-          },
-        ];
+        // Mock response
+        const id = `bill-${Date.now()}`;
+        const now = new Date().toISOString();
+        
+        const newBill: Bill = {
+          ...billData,
+          id,
+          status: 'pending',
+          user_id: 'user-1',
+          created_at: now
+        };
+        
+        toast.success('Facture ajoutée avec succès', {
+          description: `La facture ${billData.description} a été ajoutée`
+        });
+        
+        return newBill;
       }
     } catch (error) {
-      console.error('Error fetching all user bills:', error);
-      toast.error('Impossible de récupérer les factures');
-      return [];
+      console.error('Error adding bill:', error);
+      toast.error('Impossible d\'ajouter la facture');
+      throw new Error('Impossible d\'ajouter la facture');
     }
   }
 }

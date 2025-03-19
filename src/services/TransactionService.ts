@@ -2,6 +2,8 @@
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
+import { AccountService } from './AccountService';
+import { NotificationService } from './NotificationService';
 
 export interface Transaction {
   id: number;
@@ -9,25 +11,25 @@ export interface Transaction {
   amount: number;
   type: 'credit' | 'debit';
   date: string;
+  status: 'completed' | 'pending' | 'failed';
   category?: string;
   recipient_name?: string;
   recipient_account?: string;
   transfer_type?: 'standard' | 'instant' | 'scheduled' | 'mass';
-  status: 'completed' | 'pending' | 'failed';
   reference_id?: string;
   fees?: number;
 }
 
 export interface TransferData {
-  fromAccount: number;
-  toAccount: number | string;
+  fromAccountId: number;
+  toAccountId?: number;
+  beneficiaryId?: string;
   amount: number;
   description?: string;
   isInstant?: boolean;
-  isScheduled?: boolean;
   scheduledDate?: string;
-  recipients?: Array<{id: string, amount: number}>;
-  fees?: number;
+  isRecurring?: boolean;
+  recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 }
 
 export class TransactionService extends BaseService {
@@ -47,13 +49,11 @@ export class TransactionService extends BaseService {
         const response = await fetchWithAuth('/transactions/recent');
         const data = await response.json();
         
-        // Ensure the response matches the Transaction[] type
-        if (Array.isArray(data) && data.length > 0 && 'description' in data[0]) {
+        if (Array.isArray(data) && data.length > 0 && 'amount' in data[0]) {
           return data as Transaction[];
         }
         
-        console.error('Unexpected response format:', data);
-        throw new Error('Format de réponse inattendu pour les transactions');
+        return [];
       }
     } catch (error) {
       console.error('Error fetching recent transactions:', error);
@@ -62,7 +62,7 @@ export class TransactionService extends BaseService {
     }
   }
 
-  static async getTransactionsByAccount(accountId: number): Promise<Transaction[]> {
+  static async getTransactionsByAccountId(accountId: number): Promise<Transaction[]> {
     try {
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
         const { data, error } = await TransactionService.getSupabase()!
@@ -78,7 +78,11 @@ export class TransactionService extends BaseService {
         const response = await fetchWithAuth(`/transactions/account/${accountId}`);
         const data = await response.json();
         
-        return data as Transaction[] || [];
+        if (Array.isArray(data) && data.length > 0) {
+          return data as Transaction[];
+        }
+        
+        return [];
       }
     } catch (error) {
       console.error(`Error fetching transactions for account ${accountId}:`, error);
@@ -87,292 +91,227 @@ export class TransactionService extends BaseService {
     }
   }
 
-  static async createTransfer(data: TransferData): Promise<any> {
+  static async createTransfer(transferData: TransferData): Promise<any> {
     try {
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
-        // Get the accounts
-        const { data: fromAccount, error: fromError } = await TransactionService.getSupabase()!
-          .from('accounts')
-          .select('*')
-          .eq('id', data.fromAccount)
-          .single();
+        const supabase = TransactionService.getSupabase()!;
+        
+        // Start a transaction to update multiple tables atomically
+        // Note: For real implementation, you would use a database function or transaction
 
-        if (fromError) throw fromError;
-        if (!fromAccount) throw new Error('Compte source non trouvé');
-
-        // Calculate the total amount with fees if applicable
-        const totalAmount = data.amount + (data.fees || 0);
-
-        // Validate sufficient funds
-        if (fromAccount.balance < totalAmount) {
-          throw new Error('Solde insuffisant pour effectuer ce virement');
-        }
-
-        // Start a transaction
-        // 1. Create a transfer record
-        const { data: transfer, error: transferError } = await TransactionService.getSupabase()!
+        // 1. Create the transfer record
+        const { data: transfer, error: transferError } = await supabase
           .from('transfers')
           .insert({
-            from_account_id: data.fromAccount,
-            beneficiary_id: typeof data.toAccount === 'string' ? data.toAccount : undefined,
-            to_account_id: typeof data.toAccount === 'number' ? data.toAccount : undefined,
-            amount: data.amount,
-            description: data.description,
+            from_account_id: transferData.fromAccountId,
+            to_account_id: transferData.toAccountId,
+            beneficiary_id: transferData.beneficiaryId,
+            amount: transferData.amount,
+            description: transferData.description || 'Transfert',
             date: new Date().toISOString(),
-            scheduled_date: data.scheduledDate,
-            is_instant: data.isInstant || false,
-            is_recurring: false,
+            scheduled_date: transferData.scheduledDate,
+            is_instant: transferData.isInstant || false,
+            is_recurring: transferData.isRecurring || false,
+            recurring_frequency: transferData.recurringFrequency,
             status: 'completed',
-            fees: data.fees,
-            created_at: new Date().toISOString()
+            fees: transferData.isInstant ? transferData.amount * 0.01 : 0, // 1% fee for instant transfers
           })
           .select()
           .single();
 
         if (transferError) throw transferError;
+        if (!transfer) throw new Error('Erreur lors de la création du transfert');
 
         // 2. Update source account balance
-        const { error: updateError } = await TransactionService.getSupabase()!
+        const { data: fromAccount, error: fromAccountError } = await supabase
           .from('accounts')
-          .update({ 
-            balance: fromAccount.balance - totalAmount,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', data.fromAccount);
-
-        if (updateError) throw updateError;
-
-        // 3. Record the transaction
-        const { data: transaction, error: transactionError } = await TransactionService.getSupabase()!
-          .from('transactions')
-          .insert({
-            description: data.description || (data.isInstant ? 'Virement instantané' : 'Virement'),
-            amount: data.amount,
-            type: 'debit',
-            date: new Date().toISOString(),
-            account_id: data.fromAccount,
-            transfer_type: data.isInstant ? 'instant' : 'standard',
-            status: 'completed',
-            reference_id: transfer?.id.toString(),
-            created_at: new Date().toISOString()
-          })
-          .select()
+          .select('balance')
+          .eq('id', transferData.fromAccountId)
           .single();
 
-        if (transactionError) throw transactionError;
+        if (fromAccountError) throw fromAccountError;
+        if (!fromAccount) throw new Error('Compte source non trouvé');
 
-        // 4. Record the fees transaction if applicable
-        if (data.fees && data.fees > 0) {
-          const { error: feesError } = await TransactionService.getSupabase()!
-            .from('transactions')
-            .insert({
-              description: 'Frais de virement instantané',
-              amount: data.fees,
-              type: 'debit',
-              date: new Date().toISOString(),
-              account_id: data.fromAccount,
-              category: 'Frais bancaires',
-              transfer_type: 'instant',
-              status: 'completed',
-              reference_id: transfer?.id.toString(),
-              created_at: new Date().toISOString()
-            });
+        const totalDeduction = transferData.amount + (transfer.fees || 0);
+        const newFromBalance = fromAccount.balance - totalDeduction;
 
-          if (feesError) throw feesError;
+        const { error: updateFromError } = await supabase
+          .from('accounts')
+          .update({ balance: newFromBalance })
+          .eq('id', transferData.fromAccountId);
+
+        if (updateFromError) throw updateFromError;
+
+        // 3. If it's an internal transfer (to another account), update destination account balance
+        if (transferData.toAccountId) {
+          const { data: toAccount, error: toAccountError } = await supabase
+            .from('accounts')
+            .select('balance')
+            .eq('id', transferData.toAccountId)
+            .single();
+
+          if (toAccountError) throw toAccountError;
+          if (!toAccount) throw new Error('Compte destinataire non trouvé');
+
+          const newToBalance = toAccount.balance + transferData.amount;
+
+          const { error: updateToError } = await supabase
+            .from('accounts')
+            .update({ balance: newToBalance })
+            .eq('id', transferData.toAccountId);
+
+          if (updateToError) throw updateToError;
         }
 
-        // 5. Create a notification for the transfer
-        await TransactionService.getSupabase()!
-          .from('notifications')
-          .insert({
-            title: data.isInstant ? 'Virement instantané effectué' : 'Virement effectué',
-            message: `Virement de ${data.amount.toLocaleString('fr-MA')} MAD effectué avec succès.`,
-            type: 'info',
-            date: new Date().toISOString(),
-            read: false,
-            user_id: fromAccount.user_id,
-            transaction_id: transaction?.id,
-            transfer_id: transfer?.id
-          });
-
-        return {
-          success: true,
-          transferId: transfer?.id,
-          date: new Date().toLocaleDateString('fr-FR'),
-          status: 'completed',
-          isInstant: data.isInstant,
-          ...data
+        // 4. Create transaction records
+        const debitTransaction = {
+          description: transferData.description || 'Transfert sortant',
+          amount: transferData.amount,
+          type: 'debit' as const,
+          date: new Date().toISOString(),
+          account_id: transferData.fromAccountId,
+          recipient_name: null,
+          recipient_account: null,
+          transfer_type: transferData.isInstant ? 'instant' : 'standard',
+          status: 'completed' as const,
+          reference_id: transfer.id.toString(),
+          fees: transfer.fees,
         };
+
+        const { error: debitError } = await supabase
+          .from('transactions')
+          .insert(debitTransaction);
+
+        if (debitError) throw debitError;
+
+        // 5. Create a notification
+        await NotificationService.createNotification({
+          title: 'Transfert effectué',
+          message: `Transfert de ${transferData.amount.toLocaleString('fr-MA')} MAD effectué avec succès.`,
+          type: 'info',
+        });
+
+        // Return success response
+        toast.success('Transfert effectué avec succès', {
+          description: `Montant: ${transferData.amount.toLocaleString('fr-MA')} MAD`
+        });
+
+        return transfer;
       } else {
         // Use mock API
         const response = await fetchWithAuth('/transfers', {
           method: 'POST',
-          body: JSON.stringify(data)
+          body: JSON.stringify({
+            fromAccount: transferData.fromAccountId,
+            toAccount: transferData.toAccountId || transferData.beneficiaryId,
+            amount: transferData.amount,
+            description: transferData.description
+          })
         });
-        return await response.json();
+        
+        const data = await response.json();
+        
+        toast.success('Transfert effectué avec succès', {
+          description: `Montant: ${transferData.amount.toLocaleString('fr-MA')} MAD`
+        });
+        
+        return data;
       }
     } catch (error) {
       console.error('Error creating transfer:', error);
-      toast.error('Impossible de réaliser le virement');
-      throw new Error('Impossible de réaliser le virement');
+      toast.error('Impossible d\'effectuer le transfert');
+      throw new Error('Impossible d\'effectuer le transfert');
     }
   }
 
-  static async createMassTransfer(data: TransferData): Promise<any> {
+  // Utilitaire pour mettre à jour le solde du compte après une transaction
+  static async updateAccountBalance(accountId: number, amount: number, isCredit: boolean): Promise<void> {
     try {
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
-        // Implementation of mass transfer logic
-        const { data: fromAccount, error: fromError } = await TransactionService.getSupabase()!
+        // Récupérer le solde actuel
+        const { data: account, error: accountError } = await TransactionService.getSupabase()!
           .from('accounts')
-          .select('*')
-          .eq('id', data.fromAccount)
+          .select('balance')
+          .eq('id', accountId)
           .single();
 
-        if (fromError) throw fromError;
-        if (!fromAccount) throw new Error('Compte source non trouvé');
+        if (accountError) throw accountError;
+        if (!account) throw new Error('Compte non trouvé');
 
-        // Calculate total amount for all recipients
-        let totalAmount = 0;
-        if (data.recipients && data.recipients.length > 0) {
-          totalAmount = data.recipients.reduce((sum, recipient) => sum + recipient.amount, 0);
-        } else {
-          totalAmount = data.amount;
-        }
+        // Calculer le nouveau solde
+        const newBalance = isCredit 
+          ? account.balance + amount 
+          : account.balance - amount;
 
-        // Add fees if applicable
-        if (data.fees) {
-          totalAmount += data.fees;
-        }
-
-        // Validate sufficient funds
-        if (fromAccount.balance < totalAmount) {
-          throw new Error('Solde insuffisant pour effectuer ces virements');
-        }
-
-        // Create a master transfer record
-        const { data: masterTransfer, error: masterTransferError } = await TransactionService.getSupabase()!
-          .from('transfers')
-          .insert({
-            from_account_id: data.fromAccount,
-            amount: totalAmount - (data.fees || 0),
-            description: 'Virement de masse',
-            date: new Date().toISOString(),
-            is_instant: false,
-            is_recurring: false,
-            status: 'completed',
-            fees: data.fees,
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
-
-        if (masterTransferError) throw masterTransferError;
-
-        // Update source account balance
+        // Mettre à jour le solde
         const { error: updateError } = await TransactionService.getSupabase()!
           .from('accounts')
-          .update({ 
-            balance: fromAccount.balance - totalAmount,
-            updated_at: new Date().toISOString()
-          })
-          .eq('id', data.fromAccount);
+          .update({ balance: newBalance })
+          .eq('id', accountId);
 
         if (updateError) throw updateError;
 
-        // Process each recipient
-        if (data.recipients && data.recipients.length > 0) {
-          for (const recipient of data.recipients) {
-            const { error: transferError } = await TransactionService.getSupabase()!
-              .from('transfers')
-              .insert({
-                from_account_id: data.fromAccount,
-                beneficiary_id: recipient.id,
-                amount: recipient.amount,
-                description: data.description || 'Virement de masse',
-                date: new Date().toISOString(),
-                is_instant: false,
-                is_recurring: false,
-                status: 'completed',
-                created_at: new Date().toISOString()
-              });
+        // Mettre à jour l'historique du compte (si le mois est différent)
+        const currentDate = new Date();
+        const currentMonth = currentDate.toLocaleString('fr-FR', { month: 'long' });
+        const currentYear = currentDate.getFullYear();
+        const currentMonthKey = `${currentMonth} ${currentYear}`;
 
-            if (transferError) throw transferError;
-          }
-        }
+        // Vérifier si une entrée existe déjà pour ce mois
+        const { data: historyData, error: historyError } = await TransactionService.getSupabase()!
+          .from('account_history')
+          .select('*')
+          .eq('account_id', accountId)
+          .eq('month', currentMonthKey);
 
-        // Create a transaction record for the total mass transfer
-        const { data: transaction, error: transactionError } = await TransactionService.getSupabase()!
-          .from('transactions')
-          .insert({
-            description: 'Virement de masse',
-            amount: totalAmount - (data.fees || 0),
-            type: 'debit',
-            date: new Date().toISOString(),
-            account_id: data.fromAccount,
-            transfer_type: 'mass',
-            status: 'completed',
-            reference_id: masterTransfer?.id.toString(),
-            created_at: new Date().toISOString()
-          })
-          .select()
-          .single();
+        if (historyError) throw historyError;
 
-        if (transactionError) throw transactionError;
+        if (historyData && historyData.length > 0) {
+          // Mettre à jour l'entrée existante
+          const { error: updateHistoryError } = await TransactionService.getSupabase()!
+            .from('account_history')
+            .update({ amount: newBalance })
+            .eq('id', historyData[0].id);
 
-        // Record fees transaction if applicable
-        if (data.fees && data.fees > 0) {
-          const { error: feesError } = await TransactionService.getSupabase()!
-            .from('transactions')
+          if (updateHistoryError) throw updateHistoryError;
+        } else {
+          // Créer une nouvelle entrée
+          const { error: insertHistoryError } = await TransactionService.getSupabase()!
+            .from('account_history')
             .insert({
-              description: 'Frais de virement de masse',
-              amount: data.fees,
-              type: 'debit',
-              date: new Date().toISOString(),
-              account_id: data.fromAccount,
-              category: 'Frais bancaires',
-              transfer_type: 'mass',
-              status: 'completed',
-              reference_id: masterTransfer?.id.toString(),
-              created_at: new Date().toISOString()
+              account_id: accountId,
+              month: currentMonthKey,
+              amount: newBalance
             });
 
-          if (feesError) throw feesError;
+          if (insertHistoryError) throw insertHistoryError;
         }
-
-        // Create notification
-        await TransactionService.getSupabase()!
-          .from('notifications')
-          .insert({
-            title: 'Virements multiples effectués',
-            message: `Virement de masse de ${(totalAmount - (data.fees || 0)).toLocaleString('fr-MA')} MAD effectué avec succès.`,
-            type: 'info',
-            date: new Date().toISOString(),
-            read: false,
-            user_id: fromAccount.user_id,
-            transaction_id: transaction?.id,
-            transfer_id: masterTransfer?.id
-          });
-
-        return {
-          success: true,
-          transferId: masterTransfer?.id,
-          date: new Date().toLocaleDateString('fr-FR'),
-          status: 'completed',
-          totalAmount: totalAmount - (data.fees || 0),
-          recipientsCount: data.recipients?.length || 1
-        };
-      } else {
-        // Use mock API
-        const response = await fetchWithAuth('/mass-transfers', {
-          method: 'POST',
-          body: JSON.stringify(data)
-        });
-        return await response.json();
       }
     } catch (error) {
-      console.error('Error creating mass transfer:', error);
-      toast.error('Impossible de réaliser les virements de masse');
-      throw new Error('Impossible de réaliser les virements de masse');
+      console.error('Error updating account balance:', error);
+      throw error;
+    }
+  }
+
+  // Créer une masse de virements
+  static async createMassTransfer(transfers: TransferData[]): Promise<any> {
+    try {
+      // Pour la démo, on exécute chaque transfert individuellement
+      const results = [];
+      for (const transfer of transfers) {
+        const result = await TransactionService.createTransfer(transfer);
+        results.push(result);
+      }
+
+      toast.success('Virements en masse effectués', {
+        description: `${results.length} virements ont été traités avec succès.`
+      });
+
+      return results;
+    } catch (error) {
+      console.error('Error creating mass transfers:', error);
+      toast.error('Erreur lors des virements en masse');
+      throw new Error('Erreur lors des virements en masse');
     }
   }
 }

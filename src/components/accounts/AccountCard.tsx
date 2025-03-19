@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CreditCard } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
@@ -21,6 +22,8 @@ interface AccountCardProps {
 }
 
 const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
+  const navigate = useNavigate();
+
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -30,7 +33,7 @@ const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
             {payload[0].value.toLocaleString('fr-FR', {
               minimumFractionDigits: 2,
               maximumFractionDigits: 2,
-            })} €
+            })} {account.currency}
           </p>
         </div>
       );
@@ -38,8 +41,17 @@ const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
     return null;
   };
 
+  const handleViewDetails = () => {
+    navigate(`/accounts/${account.id}`);
+  };
+
+  const handleTransfer = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigate(`/transfers?fromAccount=${account.id}`);
+  };
+
   return (
-    <Card className="transition-all duration-300 hover:shadow-card-hover">
+    <Card className="cursor-pointer transition-all duration-300 hover:shadow-card-hover" onClick={handleViewDetails}>
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <CardTitle className="text-lg font-medium">{account.name}</CardTitle>
         <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bank-primary/10">
@@ -80,10 +92,16 @@ const AccountCard: React.FC<AccountCardProps> = ({ account }) => {
         </div>
         
         <div className="mt-4 flex items-center justify-between">
-          <button className="bank-button-secondary flex items-center px-3 py-2 text-sm">
+          <button 
+            className="bank-button-secondary flex items-center px-3 py-2 text-sm"
+            onClick={handleViewDetails}
+          >
             <span>Détails</span>
           </button>
-          <button className="bank-button flex items-center px-3 py-2 text-sm">
+          <button 
+            className="bank-button flex items-center px-3 py-2 text-sm"
+            onClick={handleTransfer}
+          >
             <span>Transférer</span>
           </button>
         </div>

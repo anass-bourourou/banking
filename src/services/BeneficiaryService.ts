@@ -229,4 +229,33 @@ export class BeneficiaryService extends BaseService {
       throw new Error('Impossible de modifier le statut de favori');
     }
   }
+
+  static async getFavoriteBeneficiaries(): Promise<Beneficiary[]> {
+    try {
+      if (BeneficiaryService.useSupabase() && BeneficiaryService.getSupabase()) {
+        const { data, error } = await BeneficiaryService.getSupabase()!
+          .from('beneficiaries')
+          .select('*')
+          .eq('favorite', true)
+          .order('name');
+
+        if (error) throw error;
+        return data || [];
+      } else {
+        // Use mock API - in a real app, we would have a dedicated endpoint
+        const response = await fetchWithAuth('/beneficiaries');
+        const allBeneficiaries = await response.json();
+        
+        if (Array.isArray(allBeneficiaries)) {
+          return (allBeneficiaries as Beneficiary[]).filter(b => b.favorite);
+        }
+        
+        return [];
+      }
+    } catch (error) {
+      console.error('Error fetching favorite beneficiaries:', error);
+      toast.error('Impossible de récupérer les bénéficiaires favoris');
+      throw new Error('Impossible de récupérer les bénéficiaires favoris');
+    }
+  }
 }

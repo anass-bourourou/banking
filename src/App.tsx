@@ -3,12 +3,12 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from 'sonner';
-
 import Index from './pages/Index';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import Dashboard from './pages/Dashboard';
 import Accounts from './pages/Accounts';
+import AccountDetail from './components/accounts/AccountDetail';
 import Transfers from './pages/Transfers';
 import Beneficiaries from './pages/Beneficiaries';
 import Statements from './pages/Statements';
@@ -19,7 +19,6 @@ import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/auth/ProtectedRoute';
 import { AuthProvider } from './contexts/AuthContext';
 import { ThemeProvider } from './components/theme/ThemeProvider';
-
 import MoroccanBills from './pages/MoroccanBills';
 
 const queryClient = new QueryClient();
@@ -38,6 +37,7 @@ function App() {
               <Route element={<ProtectedRoute />}>
                 <Route path="/dashboard" element={<Dashboard />} />
                 <Route path="/accounts" element={<Accounts />} />
+                <Route path="/accounts/:id" element={<AccountDetail />} />
                 <Route path="/transfers" element={<Transfers />} />
                 <Route path="/beneficiaries" element={<Beneficiaries />} />
                 <Route path="/statements" element={<Statements />} />

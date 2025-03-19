@@ -2,7 +2,23 @@
 // Base API service for making HTTP requests
 // This would be expanded in a real application to include more API endpoints
 
-import { Account, Transaction, Beneficiary } from './DataService';
+import { Account } from './AccountService';
+import { Beneficiary } from './BeneficiaryService';
+
+export interface Transaction {
+  id: number;
+  description: string;
+  amount: number;
+  type: 'credit' | 'debit';
+  date: string;
+  status: 'completed' | 'pending' | 'failed';
+  category?: string;
+  recipient_name?: string;
+  recipient_account?: string;
+  transfer_type?: 'standard' | 'instant' | 'scheduled' | 'mass';
+  reference_id?: string;
+  fees?: number;
+}
 
 const BASE_URL = 'https://api.example.ma'; // Replace with actual API URL in production
 
@@ -61,6 +77,8 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
       return { json: () => Promise.resolve(api.transactions.getByAccountId(id)) };
     } else if (endpoint === '/beneficiaries') {
       return { json: () => Promise.resolve(api.beneficiaries.getAll()) };
+    } else if (endpoint === '/statements') {
+      return { json: () => Promise.resolve(api.statements.getAll()) };
     }
   } else if (method === 'POST') {
     // POST requests
@@ -71,6 +89,25 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
     } else if (endpoint === '/beneficiaries') {
       return { 
         json: () => Promise.resolve(api.beneficiaries.create(parsedBody))
+      };
+    } else if (endpoint.includes('/download')) {
+      return {
+        json: () => Promise.resolve({ success: true })
+      };
+    }
+  } else if (method === 'PUT' || method === 'PATCH') {
+    // PUT/PATCH requests
+    if (endpoint.includes('/beneficiaries/')) {
+      const id = endpoint.split('/beneficiaries/')[1].split('/')[0];
+      return {
+        json: () => Promise.resolve({ ...parsedBody, id })
+      };
+    }
+  } else if (method === 'DELETE') {
+    // DELETE requests
+    if (endpoint.includes('/beneficiaries/')) {
+      return {
+        json: () => Promise.resolve({ success: true })
       };
     }
   }
@@ -156,23 +193,23 @@ export const api = {
     getRecent: (): Transaction[] => {
       // Mock data - would be replaced with actual API call
       return [
-        { id: 1, description: 'Salaire Attijariwafa Bank', amount: 8500.00, type: 'credit', date: '15/09/2023' },
-        { id: 2, description: 'Loyer Appartement', amount: 3800.00, type: 'debit', date: '12/09/2023' },
-        { id: 3, description: 'Marjane Casablanca', amount: 720.75, type: 'debit', date: '10/09/2023' },
-        { id: 4, description: 'Restaurant Dar Naji', amount: 350.50, type: 'debit', date: '08/09/2023' },
-        { id: 5, description: 'Remboursement Karim', amount: 500.00, type: 'credit', date: '05/09/2023' },
-        { id: 6, description: 'Facture ONEE', amount: 450.25, type: 'debit', date: '01/09/2023' },
+        { id: 1, description: 'Salaire Attijariwafa Bank', amount: 8500.00, type: 'credit', date: '15/09/2023', status: 'completed' },
+        { id: 2, description: 'Loyer Appartement', amount: 3800.00, type: 'debit', date: '12/09/2023', status: 'completed' },
+        { id: 3, description: 'Marjane Casablanca', amount: 720.75, type: 'debit', date: '10/09/2023', status: 'completed' },
+        { id: 4, description: 'Restaurant Dar Naji', amount: 350.50, type: 'debit', date: '08/09/2023', status: 'completed' },
+        { id: 5, description: 'Remboursement Karim', amount: 500.00, type: 'credit', date: '05/09/2023', status: 'completed' },
+        { id: 6, description: 'Facture ONEE', amount: 450.25, type: 'debit', date: '01/09/2023', status: 'completed' },
       ];
     },
     getByAccountId: (accountId: number): Transaction[] => {
       // Mock data - would be replaced with actual API call
       const transactions = [
-        { id: 1, description: 'Salaire Attijariwafa Bank', amount: 8500.00, type: 'credit', date: '15/09/2023', accountId: 1 },
-        { id: 2, description: 'Loyer Appartement', amount: 3800.00, type: 'debit', date: '12/09/2023', accountId: 1 },
-        { id: 3, description: 'Marjane Casablanca', amount: 720.75, type: 'debit', date: '10/09/2023', accountId: 1 },
-        { id: 4, description: 'Dividendes CIH Bank', amount: 350.50, type: 'credit', date: '01/09/2023', accountId: 2 },
-        { id: 5, description: 'Dépôt Agence', amount: 5000.00, type: 'credit', date: '20/08/2023', accountId: 2 },
-        { id: 6, description: 'Dividendes Bourse de Casablanca', amount: 780.25, type: 'credit', date: '15/09/2023', accountId: 3 },
+        { id: 1, description: 'Salaire Attijariwafa Bank', amount: 8500.00, type: 'credit', date: '15/09/2023', accountId: 1, status: 'completed' },
+        { id: 2, description: 'Loyer Appartement', amount: 3800.00, type: 'debit', date: '12/09/2023', accountId: 1, status: 'completed' },
+        { id: 3, description: 'Marjane Casablanca', amount: 720.75, type: 'debit', date: '10/09/2023', accountId: 1, status: 'completed' },
+        { id: 4, description: 'Dividendes CIH Bank', amount: 350.50, type: 'credit', date: '01/09/2023', accountId: 2, status: 'completed' },
+        { id: 5, description: 'Dépôt Agence', amount: 5000.00, type: 'credit', date: '20/08/2023', accountId: 2, status: 'completed' },
+        { id: 6, description: 'Dividendes Bourse de Casablanca', amount: 780.25, type: 'credit', date: '15/09/2023', accountId: 3, status: 'completed' },
       ].filter(t => t.accountId === accountId)
        .map(({ accountId, ...rest }) => rest as Transaction);
       
@@ -207,6 +244,7 @@ export const api = {
           bic: 'BCMAMADC',
           email: 'fatima.alaoui@email.ma',
           phone: '06 12 34 56 78',
+          favorite: false
         },
         {
           id: '2',
@@ -214,6 +252,7 @@ export const api = {
           iban: 'MA64 0099 0000 0100 0000 0000 0321',
           bic: 'ATTIMADC',
           email: 'youssef.bensaid@email.ma',
+          favorite: true
         },
         {
           id: '3',
@@ -221,6 +260,7 @@ export const api = {
           iban: 'MA64 0128 0000 0100 0000 0000 0456',
           bic: 'BPMAMAMC',
           phone: '07 65 43 21 09',
+          favorite: false
         },
       ];
     },
@@ -234,8 +274,56 @@ export const api = {
       // Mock beneficiary creation
       return {
         id: `BEN-${Date.now()}`,
+        favorite: false,
         ...beneficiary
       };
+    }
+  },
+  
+  // Statements related endpoints
+  statements: {
+    getAll: (): BankStatement[] => {
+      return [
+        {
+          id: 'state-1',
+          accountId: 1,
+          accountName: 'Compte Courant',
+          period: 'Août 2023',
+          date: '2023-09-01',
+          fileUrl: '/statements/statement-august-2023.pdf',
+          status: 'available',
+          downloadCount: 2
+        },
+        {
+          id: 'state-2',
+          accountId: 1,
+          accountName: 'Compte Courant',
+          period: 'Juillet 2023',
+          date: '2023-08-01',
+          fileUrl: '/statements/statement-july-2023.pdf',
+          status: 'available',
+          downloadCount: 1
+        },
+        {
+          id: 'state-3',
+          accountId: 2,
+          accountName: 'Compte Épargne',
+          period: 'Août 2023',
+          date: '2023-09-01',
+          fileUrl: '/statements/statement-savings-august-2023.pdf',
+          status: 'available',
+          downloadCount: 0
+        },
+        {
+          id: 'state-4',
+          accountId: 3,
+          accountName: 'Compte Investissement',
+          period: 'Août 2023',
+          date: '2023-09-01',
+          status: 'processing',
+          downloadCount: 0
+        }
+      ];
     }
   },
   
@@ -259,3 +347,15 @@ export const api = {
     }
   }
 };
+
+// Interface for BankStatement pour la réponse mock
+interface BankStatement {
+  id: string;
+  accountId: number;
+  accountName: string;
+  period: string;
+  date: string;
+  fileUrl?: string;
+  status: 'available' | 'processing';
+  downloadCount: number;
+}
