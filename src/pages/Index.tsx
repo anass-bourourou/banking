@@ -30,13 +30,13 @@ const Index = () => {
   ];
 
   // Extract first name for greeting
-  const firstName = user?.name.split(' ')[0] || 'Mohammed';
+  const firstName = user?.name?.split(' ')[0] || 'Anass';
 
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold md:text-2xl">مرحبا, {firstName}</h1>
-        <p className="text-bank-gray">مرحبا بكم في الخدمات المصرفية الخاصة بكم</p>
+        <h1 className="text-xl font-semibold md:text-2xl">Bonjour, {firstName}</h1>
+        <p className="text-bank-gray">Bienvenue dans votre espace bancaire personnel</p>
       </div>
 
       {isLoadingAccounts ? (
@@ -51,7 +51,7 @@ const Index = () => {
               accountType={account.name}
               accountNumber={account.number}
               balance={account.balance}
-              currency="د.م."
+              currency="MAD"
               change={{
                 amount: account.history.length > 1 
                   ? account.balance - account.history[account.history.length - 2].amount 
@@ -69,7 +69,7 @@ const Index = () => {
       )}
 
       <div className="mt-6">
-        <h2 className="mb-4 text-xl font-semibold">إجراءات سريعة</h2>
+        <h2 className="mb-4 text-xl font-semibold">Actions rapides</h2>
         <QuickActions />
       </div>
 

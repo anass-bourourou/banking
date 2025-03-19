@@ -7,6 +7,11 @@ CREATE TABLE public.accounts (
     balance DECIMAL(15, 2) NOT NULL DEFAULT 0,
     currency VARCHAR(10) NOT NULL DEFAULT 'MAD',
     user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    phone_number VARCHAR(20),
+    email VARCHAR(255),
+    city VARCHAR(100),
+    country VARCHAR(100) DEFAULT 'Maroc',
+    address VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT now(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT now()
 );

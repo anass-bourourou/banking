@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Check, CreditCard, Send, User, Zap, Users, FileSpreadsheet } from 'lucide-react';
+import { Check, CreditCard, Send, FileSpreadsheet, AlertCircle, FileText, Zap, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -17,16 +18,34 @@ import RecurringTransferItem from '@/components/transfers/RecurringTransferItem'
 import { Textarea } from '@/components/ui/textarea';
 import InstantTransferForm from '@/components/transfers/InstantTransferForm';
 import MassTransferForm from '@/components/transfers/MassTransferForm';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { SmsValidationService } from '@/services/SmsValidationService';
+import { useAuth } from '@/contexts/AuthContext';
+import AccountMovements from '@/components/accounts/AccountMovements';
+import { TransferReceiptService } from '@/services/TransferReceiptService';
 
 const Transfers = () => {
+  const { user } = useAuth();
   const [transferAmount, setTransferAmount] = useState('');
   const [recipient, setRecipient] = useState('');
   const [sourceAccount, setSourceAccount] = useState('');
-  const [description, setDescription] = useState('');
+  const [motif, setMotif] = useState('');
   const [transferDate, setTransferDate] = useState('');
   const [isRecurring, setIsRecurring] = useState(false);
   const [transferStep, setTransferStep] = useState(1);
   const [transferType, setTransferType] = useState('regular');
+  
+  // État pour la validation SMS
+  const [isSmsDialogOpen, setIsSmsDialogOpen] = useState(false);
+  const [smsValidationId, setSmsValidationId] = useState<number | null>(null);
+  const [smsCode, setSmsCode] = useState('');
+  const [pendingTransferData, setPendingTransferData] = useState<TransferData | null>(null);
+  const [isValidatingSms, setIsValidatingSms] = useState(false);
+  
+  // État pour les reçus
+  const [receipts, setReceipts] = useState([]);
+  const [isReceiptDialogOpen, setIsReceiptDialogOpen] = useState(false);
+  const [selectedReceipt, setSelectedReceipt] = useState(null);
 
   // Fetch accounts
   const { data: accounts = [], isLoading: isLoadingAccounts } = useQuery({
@@ -41,9 +60,15 @@ const Transfers = () => {
   });
 
   // Fetch recent transfers (using the transactions endpoint as a proxy)
-  const { data: recentTransfers = [], isLoading: isLoadingTransfers } = useQuery({
+  const { data: recentTransfers = [], isLoading: isLoadingTransfers, refetch: refetchTransfers } = useQuery({
     queryKey: ['recentTransfers'],
     queryFn: TransactionService.getRecentTransactions,
+  });
+  
+  // Fetch transfer receipts
+  const { data: transferReceipts = [], isLoading: isLoadingReceipts } = useQuery({
+    queryKey: ['transferReceipts'],
+    queryFn: TransferReceiptService.getTransferReceipts,
   });
 
   // Transfer mutation
@@ -59,10 +84,11 @@ const Transfers = () => {
       setTransferAmount('');
       setRecipient('');
       setSourceAccount('');
-      setDescription('');
+      setMotif('');
       setTransferDate('');
       setIsRecurring(false);
       setTransferStep(1);
+      refetchTransfers();
     },
     onError: (error) => {
       toast.error('Erreur lors du virement', {
@@ -80,6 +106,7 @@ const Transfers = () => {
       toast.success('Virements multiples effectués avec succès', {
         description: `${data.recipientsCount} virements pour un total de ${data.totalAmount.toLocaleString('fr-MA')} MAD`,
       });
+      refetchTransfers();
     },
     onError: (error) => {
       toast.error('Erreur lors des virements multiples', {
@@ -87,6 +114,68 @@ const Transfers = () => {
       });
     },
   });
+
+  const handleRequestSmsValidation = async (transferData: TransferData) => {
+    try {
+      // Récupérer le numéro de téléphone du compte
+      const account = accounts.find(a => a.id.toString() === transferData.fromAccountId.toString());
+      if (!account || !account.phone_number) {
+        throw new Error('Numéro de téléphone non disponible pour ce compte');
+      }
+      
+      // Demander la validation par SMS
+      const { validationId } = await TransactionService.requestTransferValidation(
+        transferData, 
+        account.phone_number
+      );
+      
+      // Enregistrer l'ID de validation et les données de transfert
+      setSmsValidationId(validationId);
+      setPendingTransferData(transferData);
+      
+      // Ouvrir la boîte de dialogue de validation
+      setIsSmsDialogOpen(true);
+    } catch (error) {
+      console.error('Error requesting SMS validation:', error);
+      toast.error('Impossible de demander la validation par SMS');
+    }
+  };
+
+  const handleSmsValidation = async () => {
+    if (!smsValidationId || !pendingTransferData || !smsCode) {
+      toast.error('Informations de validation incomplètes');
+      return;
+    }
+    
+    setIsValidatingSms(true);
+    
+    try {
+      // Ajouter l'ID de validation et le code au transfert
+      const transferDataWithValidation: TransferData = {
+        ...pendingTransferData,
+        smsValidationId,
+        validationCode: smsCode
+      };
+      
+      // Appeler la méthode de transfert appropriée
+      if (transferDataWithValidation.recipients && transferDataWithValidation.recipients.length > 0) {
+        await massTransferMutation.mutateAsync(transferDataWithValidation);
+      } else {
+        await transferMutation.mutateAsync(transferDataWithValidation);
+      }
+      
+      // Fermer la boîte de dialogue et réinitialiser
+      setIsSmsDialogOpen(false);
+      setSmsValidationId(null);
+      setPendingTransferData(null);
+      setSmsCode('');
+    } catch (error) {
+      console.error('Error validating transfer:', error);
+      toast.error('Erreur lors de la validation du virement');
+    } finally {
+      setIsValidatingSms(false);
+    }
+  };
 
   const handleNextStep = () => {
     if (transferStep === 1) {
@@ -99,7 +188,7 @@ const Transfers = () => {
       }
       setTransferStep(2);
     } else if (transferStep === 2) {
-      // Submit transfer
+      // Préparer les données de transfert
       const selectedAccount = accounts.find(a => a.id.toString() === sourceAccount);
       const selectedBeneficiary = beneficiaries.find(b => b.id === recipient);
       
@@ -114,20 +203,21 @@ const Transfers = () => {
         fromAccountId: selectedAccount.id,
         beneficiaryId: selectedBeneficiary.id,
         amount: parseFloat(transferAmount),
-        description: description || undefined,
+        motif: motif || undefined,
         scheduledDate: transferDate || undefined
       };
-
-      transferMutation.mutate(transferData);
+      
+      // Demander la validation par SMS au lieu de soumettre directement
+      handleRequestSmsValidation(transferData);
     }
   };
 
   const handleInstantTransfer = (data: TransferData) => {
-    transferMutation.mutate(data);
+    handleRequestSmsValidation(data);
   };
 
   const handleMassTransfer = (data: TransferData) => {
-    massTransferMutation.mutate(data);
+    handleRequestSmsValidation(data);
   };
 
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -145,6 +235,11 @@ const Transfers = () => {
   const getSelectedAccount = () => {
     return accounts.find(a => a.id.toString() === sourceAccount);
   };
+  
+  const handleViewReceipt = (receipt) => {
+    setSelectedReceipt(receipt);
+    setIsReceiptDialogOpen(true);
+  };
 
   useEffect(() => {
     // Pre-select first account if available
@@ -160,11 +255,16 @@ const Transfers = () => {
         <p className="text-bank-gray">Effectuez des virements rapidement et en toute sécurité</p>
       </div>
 
+      {/* Affichage des mouvements en haut de la page */}
+      <div className="mb-6">
+        <AccountMovements transactions={recentTransfers} showFilters={false} />
+      </div>
+
       <Tabs defaultValue="new" className="space-y-4">
         <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
           <TabsTrigger value="new">Nouveau virement</TabsTrigger>
           <TabsTrigger value="instant">Virement instantané</TabsTrigger>
-          <TabsTrigger value="mass">Virement de masse</TabsTrigger>
+          <TabsTrigger value="mass">Virement multiple</TabsTrigger>
           <TabsTrigger value="history">Historique</TabsTrigger>
         </TabsList>
         
@@ -227,13 +327,13 @@ const Transfers = () => {
                     </div>
                     
                     <div className="space-y-2">
-                      <Label htmlFor="description">Description (optionnel)</Label>
+                      <Label htmlFor="motif">Motif (optionnel)</Label>
                       <Textarea
-                        id="description"
+                        id="motif"
                         className="bank-input"
                         placeholder="Ex: Remboursement restaurant"
-                        value={description}
-                        onChange={(e) => setDescription(e.target.value)}
+                        value={motif}
+                        onChange={(e) => setMotif(e.target.value)}
                       />
                     </div>
                     
@@ -296,10 +396,10 @@ const Transfers = () => {
                         </span>
                       </div>
                       
-                      {description && (
+                      {motif && (
                         <div className="flex justify-between">
-                          <span className="text-bank-gray">Description :</span>
-                          <span className="font-medium">{description}</span>
+                          <span className="text-bank-gray">Motif :</span>
+                          <span className="font-medium">{motif}</span>
                         </div>
                       )}
                       
@@ -333,7 +433,7 @@ const Transfers = () => {
                       className="bank-button w-full"
                       disabled={transferMutation.isPending}
                     >
-                      {transferMutation.isPending ? 'Traitement...' : 'Confirmer le virement'}
+                      {transferMutation.isPending ? 'Traitement...' : 'Valider le virement'}
                     </Button>
                   </div>
                 </div>
@@ -370,7 +470,7 @@ const Transfers = () => {
               <div className="flex items-center space-x-2">
                 <Users className="h-5 w-5 text-blue-600" />
                 <div>
-                  <CardTitle>Virement de masse</CardTitle>
+                  <CardTitle>Virement multiple</CardTitle>
                   <CardDescription>Envoyez de l'argent à plusieurs bénéficiaires en une seule opération</CardDescription>
                 </div>
               </div>
@@ -400,7 +500,20 @@ const Transfers = () => {
               ) : recentTransfers.length > 0 ? (
                 <div className="space-y-4">
                   {recentTransfers.map((transfer) => (
-                    <TransactionItem key={transfer.id} transaction={transfer} />
+                    <div key={transfer.id} className="flex flex-col">
+                      <TransactionItem transaction={transfer} />
+                      <div className="mt-2 flex justify-end">
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="flex items-center space-x-1"
+                          onClick={() => handleViewReceipt(transfer)}
+                        >
+                          <FileText className="h-4 w-4" />
+                          <span>Voir reçu</span>
+                        </Button>
+                      </div>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -414,6 +527,115 @@ const Transfers = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      {/* Boîte de dialogue pour la validation par SMS */}
+      <Dialog open={isSmsDialogOpen} onOpenChange={setIsSmsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Validation par SMS</DialogTitle>
+            <DialogDescription>
+              Un code de validation a été envoyé par SMS au numéro de téléphone associé à votre compte.
+              Veuillez entrer ce code pour confirmer le virement.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="smsCode">Code de validation</Label>
+              <Input
+                id="smsCode"
+                value={smsCode}
+                onChange={(e) => setSmsCode(e.target.value)}
+                placeholder="Entrez le code à 6 chiffres"
+                maxLength={6}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsSmsDialogOpen(false)} disabled={isValidatingSms}>
+              Annuler
+            </Button>
+            <Button onClick={handleSmsValidation} disabled={smsCode.length !== 6 || isValidatingSms}>
+              {isValidatingSms ? 'Validation...' : 'Valider'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      
+      {/* Boîte de dialogue pour afficher un reçu */}
+      <Dialog open={isReceiptDialogOpen} onOpenChange={setIsReceiptDialogOpen}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Reçu de virement</DialogTitle>
+            <DialogDescription>
+              Détails du virement effectué
+            </DialogDescription>
+          </DialogHeader>
+          
+          {selectedReceipt && (
+            <div className="space-y-4 py-4">
+              <div className="rounded-lg bg-bank-gray-light p-4">
+                <div className="mb-2 text-center">
+                  <Check className="mx-auto mb-2 h-10 w-10 rounded-full bg-green-100 p-2 text-green-600" />
+                  <h3 className="text-lg font-medium text-green-600">Virement réussi</h3>
+                </div>
+                
+                <div className="space-y-3 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-bank-gray">Date:</span>
+                    <span>{new Date(selectedReceipt.date).toLocaleDateString('fr-FR')}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-bank-gray">Référence:</span>
+                    <span>{selectedReceipt.reference_id || 'N/A'}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-bank-gray">Montant:</span>
+                    <span className="font-medium">{selectedReceipt.amount.toLocaleString('fr-MA')} MAD</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-bank-gray">Frais:</span>
+                    <span>{selectedReceipt.fees ? selectedReceipt.fees.toLocaleString('fr-MA') : '0'} MAD</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-bank-gray">Bénéficiaire:</span>
+                    <span>{selectedReceipt.recipient_name || 'Non spécifié'}</span>
+                  </div>
+                  
+                  <div className="flex justify-between">
+                    <span className="text-bank-gray">Type:</span>
+                    <span>{
+                      selectedReceipt.transfer_type === 'standard' ? 'Virement standard' :
+                      selectedReceipt.transfer_type === 'instantané' ? 'Virement instantané' :
+                      selectedReceipt.transfer_type === 'multiple' ? 'Virement multiple' :
+                      selectedReceipt.transfer_type === 'planifié' ? 'Virement planifié' : 'Virement'
+                    }</span>
+                  </div>
+                  
+                  {selectedReceipt.motif && (
+                    <div className="flex justify-between">
+                      <span className="text-bank-gray">Motif:</span>
+                      <span>{selectedReceipt.motif}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+              
+              <div className="flex justify-end space-x-2">
+                <Button variant="outline" size="sm">
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Télécharger PDF
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </AppLayout>
   );
 };

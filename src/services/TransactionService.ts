@@ -1,9 +1,10 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
 import { AccountService } from './AccountService';
 import { NotificationService } from './NotificationService';
+import { SmsValidationService } from './SmsValidationService';
+import { TransferReceiptService } from './TransferReceiptService';
 
 export interface Transaction {
   id: number;
@@ -15,9 +16,10 @@ export interface Transaction {
   category?: string;
   recipient_name?: string;
   recipient_account?: string;
-  transfer_type?: 'standard' | 'instant' | 'scheduled' | 'mass';
+  transfer_type?: 'standard' | 'instantané' | 'planifié' | 'multiple';
   reference_id?: string;
   fees?: number;
+  motif?: string;
 }
 
 export interface TransferData {
@@ -25,13 +27,15 @@ export interface TransferData {
   toAccountId?: number;
   beneficiaryId?: string;
   amount: number;
-  description?: string;
+  motif?: string;
   isInstant?: boolean;
   scheduledDate?: string;
   isRecurring?: boolean;
   recurringFrequency?: 'daily' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
   recipients?: { id: string; amount: number }[];
   fees?: number;
+  smsValidationId?: number;
+  validationCode?: string;
 }
 
 export class TransactionService extends BaseService {
@@ -93,14 +97,43 @@ export class TransactionService extends BaseService {
     }
   }
 
+  static async requestTransferValidation(transferData: TransferData, phoneNumber: string): Promise<{ validationId: number }> {
+    try {
+      return await SmsValidationService.requestSmsValidation(
+        transferData.isInstant ? 'virement_instantané' : 
+        transferData.recipients && transferData.recipients.length > 0 ? 'virement_multiple' : 'virement_standard',
+        {
+          fromAccountId: transferData.fromAccountId,
+          amount: transferData.amount,
+          beneficiaryId: transferData.beneficiaryId,
+          toAccountId: transferData.toAccountId,
+          recipients: transferData.recipients
+        },
+        phoneNumber
+      );
+    } catch (error) {
+      console.error('Error requesting transfer validation:', error);
+      throw error;
+    }
+  }
+
   static async createTransfer(transferData: TransferData): Promise<any> {
     try {
+      // Vérification du code SMS si un ID de validation est fourni
+      if (transferData.smsValidationId && transferData.validationCode) {
+        const isValid = await SmsValidationService.verifySmsCode(
+          transferData.smsValidationId,
+          transferData.validationCode
+        );
+        
+        if (!isValid) {
+          throw new Error('Code de validation SMS invalide');
+        }
+      }
+      
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
         const supabase = TransactionService.getSupabase()!;
         
-        // Start a transaction to update multiple tables atomically
-        // Note: For real implementation, you would use a database function or transaction
-
         // 1. Create the transfer record
         const { data: transfer, error: transferError } = await supabase
           .from('transfers')
@@ -109,7 +142,7 @@ export class TransactionService extends BaseService {
             to_account_id: transferData.toAccountId,
             beneficiary_id: transferData.beneficiaryId,
             amount: transferData.amount,
-            description: transferData.description || 'Transfert',
+            description: transferData.motif || 'Virement',
             date: new Date().toISOString(),
             scheduled_date: transferData.scheduledDate,
             is_instant: transferData.isInstant || false,
@@ -122,12 +155,12 @@ export class TransactionService extends BaseService {
           .single();
 
         if (transferError) throw transferError;
-        if (!transfer) throw new Error('Erreur lors de la création du transfert');
+        if (!transfer) throw new Error('Erreur lors de la création du virement');
 
         // 2. Update source account balance
         const { data: fromAccount, error: fromAccountError } = await supabase
           .from('accounts')
-          .select('balance')
+          .select('balance, phone_number')
           .eq('id', transferData.fromAccountId)
           .single();
 
@@ -167,17 +200,18 @@ export class TransactionService extends BaseService {
 
         // 4. Create transaction records
         const debitTransaction = {
-          description: transferData.description || 'Transfert sortant',
+          description: transferData.motif || 'Virement sortant',
           amount: transferData.amount,
           type: 'debit' as const,
           date: new Date().toISOString(),
           account_id: transferData.fromAccountId,
           recipient_name: null,
           recipient_account: null,
-          transfer_type: transferData.isInstant ? 'instant' : 'standard',
+          transfer_type: transferData.isInstant ? 'instantané' : 'standard',
           status: 'completed' as const,
           reference_id: transfer.id.toString(),
           fees: transfer.fees,
+          motif: transferData.motif
         };
 
         const { error: debitError } = await supabase
@@ -188,13 +222,30 @@ export class TransactionService extends BaseService {
 
         // 5. Create a notification
         await NotificationService.addNotification({
-          title: 'Transfert effectué',
-          message: `Transfert de ${transferData.amount.toLocaleString('fr-MA')} MAD effectué avec succès.`,
+          title: 'Virement effectué',
+          message: `Virement de ${transferData.amount.toLocaleString('fr-MA')} MAD effectué avec succès.`,
           type: 'info',
         });
 
+        // 6. Generate receipt
+        try {
+          const recipientDetails = transferData.beneficiaryId ? { id: transferData.beneficiaryId } : { id: transferData.toAccountId };
+          await TransferReceiptService.generateTransferReceipt(
+            transfer.id,
+            transferData.isInstant ? 'instantané' : 'standard',
+            transferData.fromAccountId,
+            recipientDetails,
+            transferData.amount,
+            transferData.motif,
+            transfer.fees || 0
+          );
+        } catch (receiptError) {
+          console.error('Failed to generate receipt:', receiptError);
+          // Continue with the transfer even if receipt generation fails
+        }
+
         // Return success response
-        toast.success('Transfert effectué avec succès', {
+        toast.success('Virement effectué avec succès', {
           description: `Montant: ${transferData.amount.toLocaleString('fr-MA')} MAD`
         });
 
@@ -207,13 +258,13 @@ export class TransactionService extends BaseService {
             fromAccountId: transferData.fromAccountId,
             toAccountId: transferData.toAccountId || transferData.beneficiaryId,
             amount: transferData.amount,
-            description: transferData.description
+            description: transferData.motif
           })
         });
         
         const data = await response.json();
         
-        toast.success('Transfert effectué avec succès', {
+        toast.success('Virement effectué avec succès', {
           description: `Montant: ${transferData.amount.toLocaleString('fr-MA')} MAD`
         });
         
@@ -221,8 +272,8 @@ export class TransactionService extends BaseService {
       }
     } catch (error) {
       console.error('Error creating transfer:', error);
-      toast.error('Impossible d\'effectuer le transfert');
-      throw new Error('Impossible d\'effectuer le transfert');
+      toast.error('Impossible d\'effectuer le virement');
+      throw new Error('Impossible d\'effectuer le virement');
     }
   }
 
@@ -295,12 +346,24 @@ export class TransactionService extends BaseService {
     }
   }
 
-  // Créer une masse de virements
+  // Créer un virement multiple (anciennement virement de masse)
   static async createMassTransfer(transfers: TransferData): Promise<any> {
     try {
+      // Vérification du code SMS si un ID de validation est fourni
+      if (transfers.smsValidationId && transfers.validationCode) {
+        const isValid = await SmsValidationService.verifySmsCode(
+          transfers.smsValidationId,
+          transfers.validationCode
+        );
+        
+        if (!isValid) {
+          throw new Error('Code de validation SMS invalide');
+        }
+      }
+
       // Pour la démo, on considère que transfers contient déjà un tableau de bénéficiaires
       if (!transfers.recipients || transfers.recipients.length === 0) {
-        throw new Error('Aucun bénéficiaire spécifié pour le virement en masse');
+        throw new Error('Aucun bénéficiaire spécifié pour le virement multiple');
       }
 
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
@@ -311,20 +374,37 @@ export class TransactionService extends BaseService {
             fromAccountId: transfers.fromAccountId,
             beneficiaryId: recipient.id,
             amount: recipient.amount,
-            description: transfers.description || 'Virement de masse'
+            motif: transfers.motif || 'Virement multiple'
           };
           
           const result = await TransactionService.createTransfer(singleTransfer);
           results.push(result);
         }
 
-        toast.success('Virements en masse effectués', {
+        // Générer un reçu global pour le virement multiple
+        try {
+          const totalAmount = transfers.recipients.reduce((sum, recipient) => sum + recipient.amount, 0);
+          await TransferReceiptService.generateTransferReceipt(
+            results[0].id, // Utilise l'ID du premier transfert comme référence
+            'multiple',
+            transfers.fromAccountId,
+            { recipients: transfers.recipients },
+            totalAmount,
+            transfers.motif,
+            0 // Pas de frais supplémentaires pour les virements multiples
+          );
+        } catch (receiptError) {
+          console.error('Failed to generate mass transfer receipt:', receiptError);
+          // Continue with the transfer even if receipt generation fails
+        }
+
+        toast.success('Virements multiples effectués', {
           description: `${results.length} virements ont été traités avec succès.`
         });
 
         return {
           recipientsCount: results.length,
-          totalAmount: transfers.amount
+          totalAmount: transfers.recipients.reduce((sum, recipient) => sum + recipient.amount, 0)
         };
       } else {
         // Mock API
@@ -335,19 +415,19 @@ export class TransactionService extends BaseService {
 
         const data = await response.json();
         
-        toast.success('Virements en masse effectués', {
+        toast.success('Virements multiples effectués', {
           description: `${transfers.recipients?.length} virements ont été traités avec succès.`
         });
         
         return {
           recipientsCount: transfers.recipients?.length || 0,
-          totalAmount: transfers.amount
+          totalAmount: transfers.recipients.reduce((sum, recipient) => sum + recipient.amount, 0)
         };
       }
     } catch (error) {
       console.error('Error creating mass transfers:', error);
-      toast.error('Erreur lors des virements en masse');
-      throw new Error('Erreur lors des virements en masse');
+      toast.error('Erreur lors des virements multiples');
+      throw new Error('Erreur lors des virements multiples');
     }
   }
 }
