@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -144,7 +143,7 @@ export class TransactionService extends BaseService {
             to_account_id: transferData.toAccountId,
             beneficiary_id: transferData.beneficiaryId,
             amount: transferData.amount,
-            description: transferData.motif || 'Virement',
+            description: transferData.motif || transferData.description || 'Virement',
             date: new Date().toISOString(),
             scheduled_date: transferData.scheduledDate,
             is_instant: transferData.isInstant || false,

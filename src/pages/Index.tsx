@@ -11,6 +11,8 @@ import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import { useAuth } from '@/contexts/AuthContext';
 import { AccountService } from '@/services/AccountService';
 import { Loader2 } from 'lucide-react';
+import RecentTransactions from '@/components/accounts/RecentTransactions';
+import { TransactionService } from '@/services/TransactionService';
 
 const Index = () => {
   const { user } = useAuth();
@@ -18,6 +20,11 @@ const Index = () => {
   const { data: accounts, isLoading: isLoadingAccounts } = useQuery({
     queryKey: ['accounts'],
     queryFn: AccountService.getAccounts,
+  });
+
+  const { data: transactions, isLoading: isLoadingTransactions } = useQuery({
+    queryKey: ['recentTransactions'],
+    queryFn: TransactionService.getRecentTransactions,
   });
 
   const spendingData = [
@@ -67,6 +74,27 @@ const Index = () => {
           ))}
         </div>
       )}
+
+      <div className="mt-6">
+        <h2 className="mb-4 text-xl font-semibold">Mouvements récents</h2>
+        {isLoadingTransactions ? (
+          <div className="flex h-20 w-full items-center justify-center">
+            <Loader2 className="h-6 w-6 animate-spin text-bank-primary" />
+          </div>
+        ) : transactions && transactions.length > 0 ? (
+          <RecentTransactions transactions={transactions.slice(0, 5).map(t => ({
+            id: t.id,
+            description: t.description,
+            amount: t.amount,
+            type: t.type,
+            date: t.date
+          }))} />
+        ) : (
+          <div className="rounded-lg border border-bank-gray-light p-6 text-center">
+            <p className="text-bank-gray">Aucun mouvement récent</p>
+          </div>
+        )}
+      </div>
 
       <div className="mt-6">
         <h2 className="mb-4 text-xl font-semibold">Actions rapides</h2>
