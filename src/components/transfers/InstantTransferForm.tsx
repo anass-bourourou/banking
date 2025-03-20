@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -58,7 +57,7 @@ const InstantTransferForm: React.FC<InstantTransferFormProps> = ({
       fromAccountId: parseInt(sourceAccount),
       beneficiaryId: recipient,
       amount: amount,
-      description: description || 'Virement instantané',
+      motif: description || 'Virement instantané',
       isInstant: true,
       fees: INSTANT_TRANSFER_FEE // Ajout des frais
     };

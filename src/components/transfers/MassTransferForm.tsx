@@ -70,7 +70,7 @@ const MassTransferForm: React.FC<MassTransferFormProps> = ({
     const transferData: TransferData = {
       fromAccountId: parseInt(sourceAccount),
       amount: recipients.reduce((sum, recipient) => sum + parseFloat(recipient.amount), 0),
-      description: 'Virement de masse',
+      motif: 'Virement multiple',
       recipients: recipients.map(r => ({
         id: r.id,
         amount: parseFloat(r.amount)

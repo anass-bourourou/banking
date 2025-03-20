@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -10,6 +9,11 @@ export interface Account {
   balance: number;
   currency: string;
   history: { month: string; amount: number }[];
+  phone_number?: string;
+  email?: string;
+  city?: string;
+  country?: string;
+  address?: string;
 }
 
 export class AccountService extends BaseService {

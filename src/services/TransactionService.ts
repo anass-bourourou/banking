@@ -1,3 +1,4 @@
+
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -28,6 +29,7 @@ export interface TransferData {
   beneficiaryId?: string;
   amount: number;
   motif?: string;
+  description?: string; // Added this property for backward compatibility
   isInstant?: boolean;
   scheduledDate?: string;
   isRecurring?: boolean;
