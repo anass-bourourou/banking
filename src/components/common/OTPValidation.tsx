@@ -2,14 +2,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
-  Dialog,
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter 
-} from "@/components/ui/dialog";
-import { 
   InputOTP, 
   InputOTPGroup, 
   InputOTPSlot 
@@ -112,52 +104,46 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
     );
   };
 
+  // Just return the OTP panel contents without the Dialog wrapper
   return (
-    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>{description}</DialogDescription>
-        </DialogHeader>
-        
-        <div className="flex flex-col items-center justify-center py-4">
-          <InputOTP 
-            maxLength={6} 
-            value={code} 
-            onChange={setCode}
-            render={({ slots }) => (
-              <InputOTPGroup>
-                {slots.map((slot, index) => (
-                  <InputOTPSlot key={index} {...slot} index={index} />
-                ))}
-              </InputOTPGroup>
-            )}
-          />
-          
-          {error && (
-            <p className="mt-2 text-sm text-red-500">{error}</p>
+    <div className="flex flex-col space-y-4">
+      <div className="flex flex-col items-center justify-center">
+        <InputOTP 
+          maxLength={6} 
+          value={code} 
+          onChange={setCode}
+          render={({ slots }) => (
+            <InputOTPGroup>
+              {slots.map((slot, index) => (
+                <InputOTPSlot key={index} {...slot} index={index} />
+              ))}
+            </InputOTPGroup>
           )}
-
-          {visualKeyboard && renderKeyboard()}
-        </div>
+        />
         
-        <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
-          <Button variant="outline" onClick={onClose} disabled={isValidating}>
-            Annuler
-          </Button>
-          <Button onClick={handleValidate} disabled={code.length !== 6 || isValidating}>
-            {isValidating ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Validation...
-              </>
-            ) : (
-              "Valider"
-            )}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+        {error && (
+          <p className="mt-2 text-sm text-red-500">{error}</p>
+        )}
+
+        {visualKeyboard && renderKeyboard()}
+      </div>
+      
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+        <Button variant="outline" onClick={onClose} disabled={isValidating}>
+          Annuler
+        </Button>
+        <Button onClick={handleValidate} disabled={code.length !== 6 || isValidating}>
+          {isValidating ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Validation...
+            </>
+          ) : (
+            "Valider"
+          )}
+        </Button>
+      </div>
+    </div>
   );
 };
 
