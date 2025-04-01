@@ -1,16 +1,12 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { 
   Dialog, 
   DialogContent, 
   DialogHeader, 
   DialogTitle, 
-  DialogDescription, 
-  DialogFooter 
+  DialogDescription
 } from "@/components/ui/dialog";
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import OTPValidation from '@/components/common/OTPValidation';
 
 interface OTPValidationDialogProps {
@@ -26,8 +22,6 @@ const OTPValidationDialog: React.FC<OTPValidationDialogProps> = ({
   onValidate,
   isValidating
 }) => {
-  const [smsCode, setSmsCode] = useState('');
-
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
       <DialogContent>
