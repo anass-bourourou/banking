@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,18 +8,22 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { FileText, Receipt, AlertCircle, CheckCircle, Search } from 'lucide-react';
+import { FileText, Receipt, AlertCircle, CheckCircle, Search, CalendarIcon, X } from 'lucide-react';
 import { toast } from 'sonner';
 import { Bill, BillService } from '@/services/BillService';
 import { AccountService } from '@/services/AccountService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import { format } from 'date-fns';
 
 const MoroccanBills = () => {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
   const [paymentAccount, setPaymentAccount] = useState('');
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [billTypeFilter, setBillTypeFilter] = useState<'all' | 'DGI' | 'CIM'>('all');
+  const [billTypeFilter, setBillTypeFilter] = useState<'all' | 'DGI' | 'CIM' | 'OTHER'>('all');
+  const [dateFilter, setDateFilter] = useState<'all' | 'thisMonth' | 'lastMonth' | 'thisYear'>('all');
+  const [amountRange, setAmountRange] = useState<'all' | 'below500' | '500to1000' | 'above1000'>('all');
   
   const queryClient = useQueryClient();
   
@@ -33,18 +38,63 @@ const MoroccanBills = () => {
     queryKey: ['accounts'],
     queryFn: AccountService.getAccounts,
   });
+
+  const isThisMonth = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    return date.getMonth() === now.getMonth() && date.getFullYear() === now.getFullYear();
+  };
+
+  const isLastMonth = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    let lastMonth = now.getMonth() - 1;
+    let year = now.getFullYear();
+    if (lastMonth < 0) {
+      lastMonth = 11;
+      year -= 1;
+    }
+    return date.getMonth() === lastMonth && date.getFullYear() === year;
+  };
+
+  const isThisYear = (dateStr: string) => {
+    const date = new Date(dateStr);
+    const now = new Date();
+    return date.getFullYear() === now.getFullYear();
+  };
   
   // Filtrer les factures en fonction des critères
   const filteredBills = bills.filter((bill: Bill) => {
     const matchesSearch = 
       bill.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      bill.description.toLowerCase().includes(searchTerm.toLowerCase());
+      bill.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (bill.amount.toString().includes(searchTerm));
     
     const matchesType = 
       billTypeFilter === 'all' || 
       bill.type === billTypeFilter;
+
+    // Filter by date
+    let matchesDate = true;
+    if (dateFilter === 'thisMonth') {
+      matchesDate = isThisMonth(bill.dueDate);
+    } else if (dateFilter === 'lastMonth') {
+      matchesDate = isLastMonth(bill.dueDate);
+    } else if (dateFilter === 'thisYear') {
+      matchesDate = isThisYear(bill.dueDate);
+    }
+
+    // Filter by amount
+    let matchesAmount = true;
+    if (amountRange === 'below500') {
+      matchesAmount = bill.amount < 500;
+    } else if (amountRange === '500to1000') {
+      matchesAmount = bill.amount >= 500 && bill.amount <= 1000;
+    } else if (amountRange === 'above1000') {
+      matchesAmount = bill.amount > 1000;
+    }
     
-    return matchesSearch && matchesType;
+    return matchesSearch && matchesType && matchesDate && matchesAmount;
   });
   
   // Mutation pour le paiement de facture
@@ -98,11 +148,18 @@ const MoroccanBills = () => {
   
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    return date.toLocaleDateString('fr-MA', {
+    return date.toLocaleDateString('fr-FR', {
       day: '2-digit',
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  const resetFilters = () => {
+    setSearchTerm('');
+    setBillTypeFilter('all');
+    setDateFilter('all');
+    setAmountRange('all');
   };
 
   return (
@@ -113,30 +170,79 @@ const MoroccanBills = () => {
       </div>
       
       <Card className="mb-6">
-        <CardContent className="pt-6">
-          <div className="flex flex-col gap-4 sm:flex-row">
+        <CardHeader>
+          <CardTitle className="text-lg">Recherche et filtres</CardTitle>
+          <CardDescription>Affinez vos résultats selon vos besoins</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid gap-4 md:grid-cols-4">
             <div className="relative flex-1">
               <div className="pointer-events-none absolute inset-y-0 left-3 flex items-center">
                 <Search className="h-4 w-4 text-bank-gray" />
               </div>
               <Input
-                placeholder="Rechercher une facture..."
+                placeholder="Rechercher par référence, description, montant..."
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
             
-            <Select value={billTypeFilter} onValueChange={(v) => setBillTypeFilter(v as 'all' | 'DGI' | 'CIM')}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Type de facture" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Toutes les factures</SelectItem>
-                <SelectItem value="DGI">DGI</SelectItem>
-                <SelectItem value="CIM">CIM</SelectItem>
-              </SelectContent>
-            </Select>
+            <div>
+              <Label htmlFor="type-filter" className="mb-2 block text-sm">Type de facture</Label>
+              <Select value={billTypeFilter} onValueChange={(v) => setBillTypeFilter(v as 'all' | 'DGI' | 'CIM' | 'OTHER')}>
+                <SelectTrigger id="type-filter" className="w-full">
+                  <SelectValue placeholder="Toutes les factures" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les factures</SelectItem>
+                  <SelectItem value="DGI">DGI</SelectItem>
+                  <SelectItem value="CIM">CIM</SelectItem>
+                  <SelectItem value="OTHER">Autres</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="date-filter" className="mb-2 block text-sm">Période</Label>
+              <Select value={dateFilter} onValueChange={(v) => setDateFilter(v as 'all' | 'thisMonth' | 'lastMonth' | 'thisYear')}>
+                <SelectTrigger id="date-filter">
+                  <SelectValue placeholder="Toutes les périodes" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Toutes les périodes</SelectItem>
+                  <SelectItem value="thisMonth">Ce mois-ci</SelectItem>
+                  <SelectItem value="lastMonth">Mois dernier</SelectItem>
+                  <SelectItem value="thisYear">Cette année</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label htmlFor="amount-filter" className="mb-2 block text-sm">Montant</Label>
+              <Select value={amountRange} onValueChange={(v) => setAmountRange(v as 'all' | 'below500' | '500to1000' | 'above1000')}>
+                <SelectTrigger id="amount-filter">
+                  <SelectValue placeholder="Tous les montants" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tous les montants</SelectItem>
+                  <SelectItem value="below500">Moins de 500 MAD</SelectItem>
+                  <SelectItem value="500to1000">Entre 500 et 1000 MAD</SelectItem>
+                  <SelectItem value="above1000">Plus de 1000 MAD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="flex items-end md:col-span-4">
+              <Button 
+                variant="outline" 
+                onClick={resetFilters}
+                className="flex items-center"
+              >
+                <X className="mr-2 h-4 w-4" />
+                Réinitialiser les filtres
+              </Button>
+            </div>
           </div>
         </CardContent>
       </Card>
@@ -202,7 +308,9 @@ const MoroccanBills = () => {
                   </div>
                   <h3 className="mb-2 text-lg font-medium">Aucune facture en attente</h3>
                   <p className="text-bank-gray">
-                    Vous n'avez pas de factures non payées pour le moment
+                    {searchTerm || billTypeFilter !== 'all' || dateFilter !== 'all' || amountRange !== 'all' 
+                      ? "Aucune facture ne correspond à vos critères de recherche" 
+                      : "Vous n'avez pas de factures non payées pour le moment"}
                   </p>
                 </div>
               )}
@@ -256,7 +364,9 @@ const MoroccanBills = () => {
                   </div>
                   <h3 className="mb-2 text-lg font-medium">Aucune facture payée</h3>
                   <p className="text-bank-gray">
-                    L'historique de vos paiements s'affichera ici
+                    {searchTerm || billTypeFilter !== 'all' || dateFilter !== 'all' || amountRange !== 'all'
+                      ? "Aucune facture ne correspond à vos critères de recherche"
+                      : "L'historique de vos paiements s'affichera ici"}
                   </p>
                 </div>
               )}
