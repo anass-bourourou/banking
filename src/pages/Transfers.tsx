@@ -21,7 +21,6 @@ import MassTransferForm from '@/components/transfers/MassTransferForm';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { SmsValidationService } from '@/services/SmsValidationService';
 import { useAuth } from '@/contexts/AuthContext';
-import AccountMovements from '@/components/accounts/AccountMovements';
 import { TransferReceiptService } from '@/services/TransferReceiptService';
 
 const Transfers = () => {
@@ -253,11 +252,6 @@ const Transfers = () => {
       <div className="mb-6">
         <h1 className="text-xl font-semibold md:text-2xl">Virements</h1>
         <p className="text-bank-gray">Effectuez des virements rapidement et en toute sécurité</p>
-      </div>
-
-      {/* Affichage des mouvements en haut de la page */}
-      <div className="mb-6">
-        <AccountMovements transactions={recentTransfers} showFilters={false} />
       </div>
 
       <Tabs defaultValue="new" className="space-y-4">
@@ -539,6 +533,7 @@ const Transfers = () => {
             </DialogDescription>
           </DialogHeader>
           
+          {/* Utilisation du composant OTPValidation au lieu d'un champ simple */}
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label htmlFor="smsCode">Code de validation</Label>

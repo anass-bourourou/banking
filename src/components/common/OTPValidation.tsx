@@ -1,5 +1,5 @@
 
-import React, { useRef, useState } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
 import { 
   Dialog,
@@ -35,6 +35,15 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
   const [code, setCode] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [visualKeyboard, setVisualKeyboard] = useState(true);
+
+  // Fonction pour réinitialiser l'état à la fermeture
+  useEffect(() => {
+    if (!isOpen) {
+      setCode("");
+      setError(null);
+    }
+  }, [isOpen]);
 
   const handleValidate = async () => {
     if (code.length !== 6) {
@@ -58,6 +67,49 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
     } finally {
       setIsValidating(false);
     }
+  };
+
+  // Fonction pour gérer les clics sur le clavier visuel
+  const handleKeyPress = (digit: string) => {
+    if (code.length < 6) {
+      setCode(prevCode => prevCode + digit);
+    }
+  };
+
+  // Fonction pour supprimer le dernier chiffre
+  const handleBackspace = () => {
+    setCode(prevCode => prevCode.slice(0, -1));
+  };
+
+  // Fonction pour effacer tout le code
+  const handleClear = () => {
+    setCode("");
+  };
+
+  // Générer les touches du clavier visuel
+  const renderKeyboard = () => {
+    const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'];
+    
+    return (
+      <div className="mt-4 grid grid-cols-3 gap-2">
+        {digits.map((digit, index) => (
+          <Button
+            key={index}
+            type="button"
+            variant={digit === 'C' || digit === '⌫' ? 'outline' : 'secondary'}
+            className={`p-4 text-lg font-medium ${digit === 'C' ? 'text-red-500' : ''}`}
+            onClick={() => {
+              if (digit === '⌫') handleBackspace();
+              else if (digit === 'C') handleClear();
+              else handleKeyPress(digit);
+            }}
+            disabled={isValidating}
+          >
+            {digit}
+          </Button>
+        ))}
+      </div>
+    );
   };
 
   return (
@@ -85,6 +137,8 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
           {error && (
             <p className="mt-2 text-sm text-red-500">{error}</p>
           )}
+
+          {visualKeyboard && renderKeyboard()}
         </div>
         
         <DialogFooter className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">

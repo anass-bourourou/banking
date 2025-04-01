@@ -53,8 +53,8 @@ function App() {
               <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
               <Route path="/statements" element={<ProtectedRoute><Statements /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-              <Route path="/moroccan-bills" element={<ProtectedRoute><MoroccanBills /></ProtectedRoute>} />
               <Route path="/bills" element={<ProtectedRoute><Bills /></ProtectedRoute>} />
+              <Route path="/moroccan-bills" element={<ProtectedRoute><MoroccanBills /></ProtectedRoute>} />
               <Route path="/receipts" element={<ProtectedRoute><Receipts /></ProtectedRoute>} />
               <Route path="/complaints" element={<ProtectedRoute><Complaints /></ProtectedRoute>} />
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
