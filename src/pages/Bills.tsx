@@ -76,7 +76,10 @@ const Bills = () => {
         </TabsContent>
         
         <TabsContent value="vignette" className="mt-4">
-          <VignettePaymentTab onPayVignette={handlePayVignette} />
+          <VignettePaymentTab 
+            onPayVignette={handlePayVignette} 
+            isLoading={isLoadingAccounts}
+          />
         </TabsContent>
         
         <TabsContent value="receipts" className="mt-4">
