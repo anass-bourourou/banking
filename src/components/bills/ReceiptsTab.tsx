@@ -1,9 +1,11 @@
 
 import React from 'react';
 import { Card, CardHeader, CardContent, CardTitle, CardDescription } from "@/components/ui/card";
-import { Receipt, FileText, Check } from 'lucide-react';
+import { Receipt, FileText, Check, Download, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Bill } from '@/services/BillService';
+import { BillReceiptService } from '@/services/BillReceiptService';
+import { toast } from 'sonner';
 
 interface ReceiptsTabProps {
   paidBills: Bill[];
@@ -12,6 +14,8 @@ interface ReceiptsTabProps {
 const ReceiptsTab: React.FC<ReceiptsTabProps> = ({
   paidBills
 }) => {
+  const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('fr-FR', {
@@ -19,6 +23,18 @@ const ReceiptsTab: React.FC<ReceiptsTabProps> = ({
       month: '2-digit',
       year: 'numeric'
     });
+  };
+
+  const handleDownloadReceipt = async (bill: Bill) => {
+    try {
+      setDownloadingId(bill.id);
+      await BillReceiptService.downloadReceipt(bill);
+    } catch (error) {
+      toast.error("Échec du téléchargement du reçu");
+      console.error("Download receipt error:", error);
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   return (
@@ -56,8 +72,17 @@ const ReceiptsTab: React.FC<ReceiptsTabProps> = ({
                 </div>
                 <div className="flex items-center space-x-2">
                   <span className="font-medium">{bill.amount.toLocaleString('fr-MA')} MAD</span>
-                  <Button variant="outline" size="sm">
-                    <FileText className="mr-2 h-4 w-4" />
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => handleDownloadReceipt(bill)}
+                    disabled={downloadingId === bill.id}
+                  >
+                    {downloadingId === bill.id ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Download className="mr-2 h-4 w-4" />
+                    )}
                     Télécharger
                   </Button>
                 </div>

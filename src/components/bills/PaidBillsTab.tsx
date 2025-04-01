@@ -4,6 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { Bill } from '@/services/BillService';
 import BillCard from './BillCard';
+import { BillReceiptService } from '@/services/BillReceiptService';
+import { toast } from 'sonner';
 
 interface PaidBillsTabProps {
   bills: Bill[];
@@ -14,6 +16,20 @@ const PaidBillsTab: React.FC<PaidBillsTabProps> = ({
   bills,
   isLoading
 }) => {
+  const [downloadingId, setDownloadingId] = React.useState<string | null>(null);
+
+  const handleDownloadReceipt = async (bill: Bill) => {
+    try {
+      setDownloadingId(bill.id);
+      await BillReceiptService.downloadReceipt(bill);
+    } catch (error) {
+      toast.error("Échec du téléchargement du reçu");
+      console.error("Download receipt error:", error);
+    } finally {
+      setDownloadingId(null);
+    }
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-40 w-full items-center justify-center">
@@ -41,7 +57,8 @@ const PaidBillsTab: React.FC<PaidBillsTabProps> = ({
           key={bill.id}
           bill={bill}
           isPaid={true}
-          onViewReceipt={() => {}}
+          isLoading={downloadingId === bill.id}
+          onViewReceipt={() => handleDownloadReceipt(bill)}
         />
       ))}
     </div>
