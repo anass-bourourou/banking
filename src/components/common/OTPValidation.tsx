@@ -15,6 +15,7 @@ interface OTPValidationProps {
   onValidate: (code: string) => Promise<boolean>;
   title?: string;
   description?: string;
+  visualKeyboard?: boolean;
 }
 
 const OTPValidation: React.FC<OTPValidationProps> = ({ 
@@ -22,12 +23,12 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
   onClose, 
   onValidate, 
   title = "Validation par SMS",
-  description = "Veuillez saisir le code à 6 chiffres envoyé par SMS sur votre téléphone"
+  description = "Veuillez saisir le code à 6 chiffres envoyé par SMS sur votre téléphone",
+  visualKeyboard = true
 }) => {
   const [code, setCode] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [visualKeyboard, setVisualKeyboard] = useState(true);
 
   // Fonction pour réinitialiser l'état à la fermeture
   useEffect(() => {

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   Dialog, 
   DialogContent, 
@@ -45,9 +45,10 @@ const OTPValidationDialog: React.FC<OTPValidationDialogProps> = ({
         </DialogHeader>
         
         <OTPValidation 
-          isOpen={true}
+          isOpen={isOpen}
           onClose={onClose}
           onValidate={handleValidate}
+          visualKeyboard={true}
         />
       </DialogContent>
     </Dialog>

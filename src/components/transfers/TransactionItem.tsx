@@ -1,12 +1,11 @@
 
 import React from 'react';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { Transaction } from '@/services/DataService';
 import { format, isToday, isYesterday } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface TransactionItemProps {
-  transaction: Transaction;
+  transaction: any;
   detailed?: boolean;
 }
 
@@ -41,18 +40,46 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, detailed
         </div>
         <div>
           <p className="font-medium">{transaction.description}</p>
-          <p className="text-sm text-bank-gray">{formatDate(transaction.date)}</p>
+          <div className="text-sm text-bank-gray flex flex-wrap gap-1">
+            <span>{formatDate(transaction.date)}</span>
+            {transaction.transfer_type && (
+              <>
+                <span>•</span>
+                <span>{transaction.transfer_type === 'instantané' ? 'Virement instantané' : 
+                      transaction.transfer_type === 'multiple' ? 'Virement multiple' : 
+                      'Virement standard'}</span>
+              </>
+            )}
+            {transaction.reference_id && (
+              <>
+                <span>•</span>
+                <span>Réf: {transaction.reference_id}</span>
+              </>
+            )}
+          </div>
+          {transaction.recipient_name && (
+            <p className="text-sm text-bank-primary">Destinataire: {transaction.recipient_name}</p>
+          )}
         </div>
       </div>
       <div className="text-right">
         <p className={`font-medium ${isCredit ? 'text-green-600' : 'text-red-600'}`}>
-          {isCredit ? '+' : '-'}{transaction.amount.toLocaleString('fr-FR', {
+          {isCredit ? '+' : '-'}{transaction.amount.toLocaleString('fr-MA', {
             minimumFractionDigits: 2,
             maximumFractionDigits: 2,
-          })} €
+          })} MAD
         </p>
         {detailed && transaction.category && (
           <p className="text-sm text-bank-gray">{transaction.category}</p>
+        )}
+        {transaction.status && (
+          <p className={`text-xs ${
+            transaction.status === 'completed' ? 'text-green-600' : 
+            transaction.status === 'pending' ? 'text-amber-600' : 'text-red-600'
+          }`}>
+            {transaction.status === 'completed' ? 'Terminé' : 
+             transaction.status === 'pending' ? 'En attente' : 'Échoué'}
+          </p>
         )}
       </div>
     </div>
