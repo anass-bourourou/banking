@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { format, isToday, isYesterday } from 'date-fns';
+import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
 
 interface TransactionItemProps {
@@ -18,14 +18,27 @@ const TransactionItem: React.FC<TransactionItemProps> = ({
   const isCredit = transaction.type === 'credit';
   
   const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
+    if (!dateString) return 'Date inconnue';
     
-    if (isToday(date)) {
-      return "Aujourd'hui";
-    } else if (isYesterday(date)) {
-      return 'Hier';
-    } else {
-      return format(date, 'd MMMM yyyy', { locale: fr });
+    try {
+      // Use parseISO to safely parse ISO date strings
+      const date = parseISO(dateString);
+      
+      // Verify that the date is valid
+      if (isNaN(date.getTime())) {
+        return 'Date invalide';
+      }
+      
+      if (isToday(date)) {
+        return "Aujourd'hui";
+      } else if (isYesterday(date)) {
+        return 'Hier';
+      } else {
+        return format(date, 'd MMMM yyyy', { locale: fr });
+      }
+    } catch (error) {
+      console.error(`Error formatting date ${dateString}:`, error);
+      return 'Date invalide';
     }
   };
 
