@@ -43,7 +43,7 @@ const TransferHistoryTab: React.FC<TransferHistoryTabProps> = ({
         <CardTitle>Historique des virements</CardTitle>
         <CardDescription>Consultez vos virements précédents</CardDescription>
         
-        {/* Ajout des filtres de recherche */}
+        {/* Filtres de recherche */}
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
           <div className="relative">
             <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
@@ -78,14 +78,21 @@ const TransferHistoryTab: React.FC<TransferHistoryTabProps> = ({
         ) : filteredTransfers.length > 0 ? (
           <div className="space-y-4">
             {filteredTransfers.map((transfer) => (
-              <div key={transfer.id} className="flex flex-col">
-                <TransactionItem transaction={transfer} />
-                <div className="mt-2 flex justify-end">
+              <div key={transfer.id} className="space-y-2">
+                <TransactionItem 
+                  transaction={transfer} 
+                  detailed={true}
+                  onClick={() => onViewReceipt(transfer)}
+                />
+                <div className="flex justify-end px-2">
                   <Button
                     variant="outline"
                     size="sm"
                     className="flex items-center space-x-1"
-                    onClick={() => onViewReceipt(transfer)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onViewReceipt(transfer);
+                    }}
                   >
                     <FileText className="h-4 w-4 mr-1" />
                     <span>Voir reçu</span>

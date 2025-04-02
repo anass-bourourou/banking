@@ -7,9 +7,14 @@ import { fr } from 'date-fns/locale';
 interface TransactionItemProps {
   transaction: any;
   detailed?: boolean;
+  onClick?: () => void;
 }
 
-const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, detailed = false }) => {
+const TransactionItem: React.FC<TransactionItemProps> = ({ 
+  transaction, 
+  detailed = false,
+  onClick
+}) => {
   const isCredit = transaction.type === 'credit';
   
   const formatDate = (dateString: string) => {
@@ -25,9 +30,12 @@ const TransactionItem: React.FC<TransactionItemProps> = ({ transaction, detailed
   };
 
   return (
-    <div className={`flex items-center justify-between rounded-lg border border-bank-gray-light p-4 ${
-      detailed ? 'mb-4 hover:bg-bank-gray-light/40 transition-colors' : ''
-    }`}>
+    <div 
+      className={`flex items-center justify-between rounded-lg border border-bank-gray-light p-4 ${
+        detailed ? 'mb-4 hover:bg-bank-gray-light/40 transition-colors' : ''
+      } ${onClick ? 'cursor-pointer' : ''}`}
+      onClick={onClick}
+    >
       <div className="flex items-center space-x-3">
         <div className={`flex h-10 w-10 items-center justify-center rounded-full ${
           isCredit ? 'bg-green-100' : 'bg-red-100'

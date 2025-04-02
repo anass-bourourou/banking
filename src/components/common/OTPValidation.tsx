@@ -84,13 +84,13 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
     const digits = ['1', '2', '3', '4', '5', '6', '7', '8', '9', 'C', '0', '⌫'];
     
     return (
-      <div className="mt-4 grid grid-cols-3 gap-2">
+      <div className="mt-6 grid grid-cols-3 gap-3">
         {digits.map((digit, index) => (
           <Button
             key={index}
             type="button"
             variant={digit === 'C' || digit === '⌫' ? 'outline' : 'secondary'}
-            className={`p-4 text-lg font-medium ${digit === 'C' ? 'text-red-500' : ''}`}
+            className={`h-14 text-lg font-medium ${digit === 'C' ? 'text-red-500' : ''}`}
             onClick={() => {
               if (digit === '⌫') handleBackspace();
               else if (digit === 'C') handleClear();
@@ -107,7 +107,6 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
 
   if (!isOpen) return null;
 
-  // Just return the OTP panel contents without the Dialog wrapper
   return (
     <div className="flex flex-col space-y-4">
       <div className="text-center mb-4">
@@ -136,7 +135,7 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
         {visualKeyboard && renderKeyboard()}
       </div>
       
-      <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2">
+      <div className="flex flex-col-reverse sm:flex-row sm:justify-end sm:space-x-2 mt-4">
         <Button variant="outline" onClick={onClose} disabled={isValidating}>
           Annuler
         </Button>
