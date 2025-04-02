@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardDescription, CardTitle } from "@/components/ui/card";
-import { Loader2, AlertTriangle, Search, FilterX } from 'lucide-react';
+import { Loader2, AlertTriangle, Search, FilterX, Download } from 'lucide-react';
 import { Bill } from '@/services/BillService';
 import BillCard from './BillCard';
 import { BillReceiptService } from '@/services/BillReceiptService';
@@ -28,6 +28,7 @@ const PaidBillsTab: React.FC<PaidBillsTabProps> = ({
     try {
       setDownloadingId(bill.id);
       await BillReceiptService.downloadReceipt(bill);
+      toast.success("Reçu téléchargé avec succès");
     } catch (error) {
       toast.error("Échec du téléchargement du reçu");
       console.error("Download receipt error:", error);
@@ -66,6 +67,31 @@ const PaidBillsTab: React.FC<PaidBillsTabProps> = ({
     setSearchTerm('');
     setTypeFilter('all');
     setSortOrder('recent');
+  };
+
+  const handleBulkDownload = async () => {
+    if (sortedBills.length === 0) {
+      toast.error("Aucun reçu à télécharger");
+      return;
+    }
+    
+    toast.info(`Téléchargement de ${sortedBills.length} reçus en cours...`);
+    
+    // Télécharger un par un avec un délai
+    for (let i = 0; i < Math.min(sortedBills.length, 5); i++) {
+      try {
+        await BillReceiptService.downloadReceipt(sortedBills[i]);
+        await new Promise(r => setTimeout(r, 500)); // Délai pour éviter le blocage du navigateur
+      } catch (error) {
+        console.error(`Error downloading receipt ${i}:`, error);
+      }
+    }
+    
+    if (sortedBills.length > 5) {
+      toast.info("Pour éviter le blocage du navigateur, seuls les 5 premiers reçus ont été téléchargés");
+    } else {
+      toast.success("Tous les reçus ont été téléchargés");
+    }
   };
 
   if (isLoading) {
@@ -138,8 +164,8 @@ const PaidBillsTab: React.FC<PaidBillsTabProps> = ({
             </div>
           </div>
           
-          {(searchTerm || typeFilter !== 'all' || sortOrder !== 'recent') && (
-            <div className="mt-4 flex justify-end">
+          <div className="mt-4 flex flex-wrap justify-between gap-2">
+            {(searchTerm || typeFilter !== 'all' || sortOrder !== 'recent') && (
               <Button 
                 variant="outline" 
                 size="sm" 
@@ -149,8 +175,20 @@ const PaidBillsTab: React.FC<PaidBillsTabProps> = ({
                 <FilterX className="mr-2 h-4 w-4" />
                 Réinitialiser les filtres
               </Button>
-            </div>
-          )}
+            )}
+            
+            {sortedBills.length > 0 && (
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={handleBulkDownload}
+                className="flex items-center ml-auto"
+              >
+                <Download className="mr-2 h-4 w-4" />
+                Télécharger tous les reçus
+              </Button>
+            )}
+          </div>
         </CardContent>
       </Card>
 

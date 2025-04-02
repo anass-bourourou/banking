@@ -1,96 +1,169 @@
 
-import { BaseService } from './BaseService';
 import { Bill } from './BillService';
 import { toast } from 'sonner';
+import { Account } from './AccountService';
 
-export class BillReceiptService extends BaseService {
-  /**
-   * Downloads a receipt for a paid bill
-   */
-  static async downloadReceipt(bill: Bill): Promise<string> {
+export class BillReceiptService {
+  static async downloadReceipt(bill: Bill): Promise<void> {
     try {
-      if (BillReceiptService.useSupabase() && BillReceiptService.getSupabase()) {
-        // Implementation for real receipt download from Supabase Storage would go here
-        // This would retrieve the PDF from storage or generate it on the fly
-        // For now, we'll use our mock implementation
-        return await this.generateMockPdf(bill);
-      } else {
-        return await this.generateMockPdf(bill);
-      }
-    } catch (error) {
-      console.error('Error downloading receipt:', error);
-      toast.error('Impossible de télécharger le reçu');
-      throw new Error('Impossible de télécharger le reçu');
-    }
-  }
-  
-  /**
-   * Generates a mock PDF receipt for a bill
-   */
-  private static async generateMockPdf(bill: Bill): Promise<string> {
-    try {
-      // This simulates generating a PDF
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          // Create the PDF content
-          const pdfContent = this.createPdfContent(bill);
-          
-          // Create a Blob representing the PDF file
-          const blob = new Blob([pdfContent], { type: 'application/pdf' });
-          const url = URL.createObjectURL(blob);
-          
-          // Create a download link and trigger the download
-          const downloadLink = document.createElement('a');
-          downloadLink.href = url;
-          downloadLink.download = `Reçu-${bill.reference}.pdf`;
-          document.body.appendChild(downloadLink);
-          downloadLink.click();
-          document.body.removeChild(downloadLink);
-          
-          // Clean up the URL object
-          window.setTimeout(() => URL.revokeObjectURL(url), 1000);
-          
-          toast.success('Téléchargement du reçu démarré', {
-            description: 'Le téléchargement devrait commencer sous peu'
-          });
-          
-          resolve(url);
-        }, 500);
-      });
-    } catch (error) {
-      console.error('Error generating PDF:', error);
-      throw new Error('Impossible de générer le PDF');
-    }
-  }
-  
-  /**
-   * Creates the content for the PDF receipt
-   */
-  private static createPdfContent(bill: Bill): string {
-    // Format the date for display
-    const formatDate = (dateString: string) => {
-      const date = new Date(dateString);
-      return date.toLocaleDateString('fr-FR', {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      });
-    };
-    
-    // In a real implementation, we would use a PDF generation library
-    // For this mock, we'll just return a string that would represent PDF content
-    return `REÇU DE PAIEMENT
+      // Simuler un délai de génération du PDF
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Générer le contenu du PDF
+      const pdfContent = `
+REÇU DE PAIEMENT
 ----------------------------------------
-N° de Référence: ${bill.reference}
+Date: ${new Date(bill.paymentDate || new Date()).toLocaleDateString('fr-FR')}
+Référence: ${bill.reference}
+Émetteur: ${bill.type}
 Description: ${bill.description}
-Type: ${bill.type}
 Montant: ${bill.amount.toLocaleString('fr-MA')} MAD
-Date de paiement: ${bill.paymentDate ? formatDate(bill.paymentDate) : 'N/A'}
-Date d'échéance: ${formatDate(bill.dueDate)}
-Statut: Payé
+Status: ${bill.isPaid ? 'Payé' : 'En attente'}
 ----------------------------------------
 Ce document est un reçu officiel de paiement.
-Conservez-le pour vos archives.
-`;
+Bank of Morocco
+      `;
+      
+      // Créer un blob pour le PDF
+      const blob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      // Créer un lien de téléchargement et déclencher le téléchargement
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `Recu-${bill.type}-${bill.reference}.pdf`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Nettoyer l'URL
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      
+      toast.success('Reçu téléchargé avec succès');
+    } catch (error) {
+      console.error('Error downloading receipt:', error);
+      toast.error('Erreur lors du téléchargement du reçu');
+      throw error;
+    }
+  }
+  
+  static async generateVignetteReceipt(
+    matricule: string, 
+    type: string, 
+    amount: number, 
+    account: Account
+  ): Promise<void> {
+    try {
+      // Simuler un délai de génération du PDF
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Générer le contenu du PDF pour la vignette
+      const currentDate = new Date();
+      const nextYear = new Date();
+      nextYear.setFullYear(currentDate.getFullYear() + 1);
+      
+      const pdfContent = `
+REÇU DE PAIEMENT VIGNETTE
+----------------------------------------
+Date: ${currentDate.toLocaleDateString('fr-FR')}
+Matricule: ${matricule}
+Type de véhicule: ${type}
+Montant: ${amount.toLocaleString('fr-MA')} MAD
+Compte débité: ${account.name} (${account.number})
+Valide du: ${currentDate.toLocaleDateString('fr-FR')}
+Valide jusqu'au: ${nextYear.toLocaleDateString('fr-FR')}
+Référence: VIG-${Date.now().toString().substring(6)}
+----------------------------------------
+Ce document tient lieu de justificatif de paiement de la vignette.
+À conserver avec les documents du véhicule.
+      `;
+      
+      // Créer un blob pour le PDF
+      const blob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      // Créer un lien de téléchargement et déclencher le téléchargement
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `Vignette-${matricule}.pdf`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Nettoyer l'URL
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      
+      toast.success('Reçu de vignette téléchargé avec succès');
+    } catch (error) {
+      console.error('Error generating vignette receipt:', error);
+      toast.error('Erreur lors de la génération du reçu de vignette');
+      throw error;
+    }
+  }
+  
+  static async generateMassVignetteReceipt(
+    vignettes: { matricule: string; type: string; amount: number }[],
+    account: Account
+  ): Promise<void> {
+    try {
+      // Simuler un délai de génération du PDF
+      await new Promise(resolve => setTimeout(resolve, 800));
+      
+      // Calculer le montant total
+      const totalAmount = vignettes.reduce((sum, vignette) => sum + vignette.amount, 0);
+      
+      // Générer le contenu du PDF pour les vignettes multiples
+      const currentDate = new Date();
+      const nextYear = new Date();
+      nextYear.setFullYear(currentDate.getFullYear() + 1);
+      
+      let vignettesList = '';
+      vignettes.forEach((vignette, index) => {
+        vignettesList += `
+${index + 1}. Matricule: ${vignette.matricule}
+   Type de véhicule: ${vignette.type}
+   Montant: ${vignette.amount.toLocaleString('fr-MA')} MAD
+        `;
+      });
+      
+      const pdfContent = `
+REÇU DE PAIEMENT VIGNETTES MULTIPLES
+----------------------------------------
+Date: ${currentDate.toLocaleDateString('fr-FR')}
+Nombre de vignettes: ${vignettes.length}
+Montant total: ${totalAmount.toLocaleString('fr-MA')} MAD
+Compte débité: ${account.name} (${account.number})
+Valide du: ${currentDate.toLocaleDateString('fr-FR')}
+Valide jusqu'au: ${nextYear.toLocaleDateString('fr-FR')}
+Référence: VIGM-${Date.now().toString().substring(6)}
+
+DÉTAIL DES VIGNETTES:
+${vignettesList}
+----------------------------------------
+Ce document tient lieu de justificatif de paiement des vignettes.
+À conserver avec les documents des véhicules.
+      `;
+      
+      // Créer un blob pour le PDF
+      const blob = new Blob([pdfContent], { type: 'application/pdf' });
+      const url = URL.createObjectURL(blob);
+      
+      // Créer un lien de téléchargement et déclencher le téléchargement
+      const downloadLink = document.createElement('a');
+      downloadLink.href = url;
+      downloadLink.download = `Vignettes-Multiples-${Date.now()}.pdf`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      document.body.removeChild(downloadLink);
+      
+      // Nettoyer l'URL
+      setTimeout(() => URL.revokeObjectURL(url), 100);
+      
+      toast.success('Reçu des vignettes multiples téléchargé avec succès');
+    } catch (error) {
+      console.error('Error generating mass vignette receipt:', error);
+      toast.error('Erreur lors de la génération du reçu des vignettes multiples');
+      throw error;
+    }
   }
 }

@@ -29,17 +29,18 @@ const TransferReceiptDialog: React.FC<TransferReceiptDialogProps> = ({
   const handleDownloadPdf = () => {
     setIsDownloading(true);
     
-    // Simulate PDF download
     setTimeout(() => {
       try {
-        // Create PDF content
-        const pdfContent = `REÇU DE VIREMENT
+        // Créer contenu PDF plus détaillé
+        const pdfContent = `
+REÇU DE VIREMENT
 ----------------------------------------
 Date: ${new Date(receipt.date).toLocaleDateString('fr-FR')}
-Référence: ${receipt.reference_id || 'N/A'}
+Référence: ${receipt.reference_id || receipt.id || 'N/A'}
 Montant: ${receipt.amount.toLocaleString('fr-MA')} MAD
 Frais: ${receipt.fees ? receipt.fees.toLocaleString('fr-MA') : '0'} MAD
 Bénéficiaire: ${receipt.recipient_name || 'Non spécifié'}
+Compte bénéficiaire: ${receipt.recipient_account || 'Non spécifié'}
 Type: ${
   receipt.transfer_type === 'standard' ? 'Virement standard' :
   receipt.transfer_type === 'instantané' ? 'Virement instantané' :
@@ -47,36 +48,43 @@ Type: ${
   receipt.transfer_type === 'planifié' ? 'Virement planifié' : 'Virement'
 }
 ${receipt.motif ? `Motif: ${receipt.motif}` : ''}
+
+INFORMATIONS BANCAIRES
+----------------------------------------
+Banque: Bank of Morocco
+Adresse: 123 Avenue Mohammed V, Casablanca
+Tel: +212 522 000 000
+Email: contact@bankofmorocco.ma
+Site web: www.bankofmorocco.ma
+
 ----------------------------------------
 Ce document est un reçu officiel de virement.
 Conservez-le pour vos archives.
-`;
+        `;
         
-        // Create a Blob representing the PDF file
+        // Créer un Blob représentant le fichier PDF
         const blob = new Blob([pdfContent], { type: 'application/pdf' });
         const url = URL.createObjectURL(blob);
         
-        // Create a download link and trigger the download
+        // Créer un lien de téléchargement et déclencher le téléchargement
         const downloadLink = document.createElement('a');
         downloadLink.href = url;
-        downloadLink.download = `Recu-Virement-${receipt.reference_id || 'transfer'}.pdf`;
+        downloadLink.download = `Recu-Virement-${receipt.reference_id || receipt.id || Date.now()}.pdf`;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
         
-        // Clean up the URL object
+        // Nettoyer l'URL
         window.setTimeout(() => URL.revokeObjectURL(url), 1000);
         
-        toast.success('Téléchargement du reçu démarré', {
-          description: 'Le téléchargement devrait commencer sous peu'
-        });
+        toast.success('Reçu téléchargé avec succès');
       } catch (error) {
         console.error('Error generating PDF:', error);
         toast.error('Impossible de générer le PDF');
       } finally {
         setIsDownloading(false);
       }
-    }, 500);
+    }, 800);
   };
 
   return (
@@ -104,7 +112,7 @@ Conservez-le pour vos archives.
               
               <div className="flex justify-between">
                 <span className="text-bank-gray">Référence:</span>
-                <span>{receipt.reference_id || 'N/A'}</span>
+                <span>{receipt.reference_id || receipt.id || 'N/A'}</span>
               </div>
               
               <div className="flex justify-between">
@@ -121,6 +129,13 @@ Conservez-le pour vos archives.
                 <span className="text-bank-gray">Bénéficiaire:</span>
                 <span>{receipt.recipient_name || 'Non spécifié'}</span>
               </div>
+              
+              {receipt.recipient_account && (
+                <div className="flex justify-between">
+                  <span className="text-bank-gray">Compte:</span>
+                  <span>{receipt.recipient_account}</span>
+                </div>
+              )}
               
               <div className="flex justify-between">
                 <span className="text-bank-gray">Type:</span>
@@ -147,13 +162,19 @@ Conservez-le pour vos archives.
               size="sm"
               onClick={handleDownloadPdf}
               disabled={isDownloading}
+              className="w-full sm:w-auto"
             >
               {isDownloading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Préparation du PDF...
+                </>
               ) : (
-                <FileSpreadsheet className="mr-2 h-4 w-4" />
+                <>
+                  <FileSpreadsheet className="mr-2 h-4 w-4" />
+                  Télécharger PDF
+                </>
               )}
-              Télécharger PDF
             </Button>
           </div>
         </div>
