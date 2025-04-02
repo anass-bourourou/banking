@@ -18,7 +18,7 @@ Référence: ${bill.reference}
 Émetteur: ${bill.type}
 Description: ${bill.description}
 Montant: ${bill.amount.toLocaleString('fr-MA')} MAD
-Status: ${bill.isPaid ? 'Payé' : 'En attente'}
+Status: ${bill.status === 'paid' ? 'Payé' : 'En attente'}
 ----------------------------------------
 Ce document est un reçu officiel de paiement.
 Bank of Morocco

@@ -136,4 +136,27 @@ export class AccountService extends BaseService {
       throw new Error('Impossible de récupérer les détails du compte');
     }
   }
+
+  static async updateAccountBalance(accountId: number, data: { balance: number }): Promise<void> {
+    try {
+      if (AccountService.useSupabase() && AccountService.getSupabase()) {
+        const { error } = await AccountService.getSupabase()!
+          .from('accounts')
+          .update({ balance: data.balance, updated_at: new Date().toISOString() })
+          .eq('id', accountId);
+
+        if (error) throw error;
+      } else {
+        // Use mock API
+        await fetchWithAuth(`/accounts/${accountId}/balance`, {
+          method: 'PUT',
+          body: JSON.stringify(data)
+        });
+      }
+    } catch (error) {
+      console.error(`Error updating account balance for ${accountId}:`, error);
+      toast.error('Impossible de mettre à jour le solde du compte');
+      throw new Error('Impossible de mettre à jour le solde du compte');
+    }
+  }
 }

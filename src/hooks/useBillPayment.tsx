@@ -2,7 +2,7 @@
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { BillService, Bill } from '@/services/BillService';
-import { AccountService } from '@/services/AccountService';
+import { AccountService, Account } from '@/services/AccountService';
 import { SmsValidationService } from '@/services/SmsValidationService';
 import { toast } from 'sonner';
 
@@ -132,6 +132,7 @@ export const useBillPayment = () => {
     bills,
     unpaidBills,
     paidBills,
+    accounts, // Added the missing accounts property
     isLoadingBills,
     isLoadingAccounts,
     showOTPModal,
