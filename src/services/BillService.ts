@@ -5,6 +5,7 @@ import { toast } from 'sonner';
 import { Account } from './AccountService';
 import { TransactionService } from './TransactionService';
 import { NotificationService } from './NotificationService';
+import { SmsValidationService } from './SmsValidationService';
 
 export interface Bill {
   id: string;
@@ -47,10 +48,27 @@ export class BillService extends BaseService {
     }
   }
 
-  static async payBill(billId: string, accountId: number): Promise<void> {
+  static async payBill(
+    billId: string, 
+    accountId: number, 
+    validationCode?: string, 
+    validationId?: number | null
+  ): Promise<void> {
     try {
       if (BillService.useSupabase() && BillService.getSupabase()) {
         const supabase = BillService.getSupabase()!;
+        
+        // Vérifier le code OTP si fourni
+        if (validationId && validationCode) {
+          const isValid = await SmsValidationService.verifySmsCode(
+            validationId,
+            validationCode
+          );
+          
+          if (!isValid) {
+            throw new Error('Code de validation SMS invalide');
+          }
+        }
         
         // Get bill details
         const { data: bill, error: billError } = await supabase
@@ -129,7 +147,7 @@ export class BillService extends BaseService {
         // Mock API
         await fetchWithAuth(`/bills/${billId}/pay`, {
           method: 'POST',
-          body: JSON.stringify({ accountId })
+          body: JSON.stringify({ accountId, validationCode, validationId })
         });
         
         toast.success('Paiement réussi', {

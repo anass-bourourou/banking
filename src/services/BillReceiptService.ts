@@ -11,17 +11,33 @@ export class BillReceiptService {
       
       // Générer le contenu du PDF
       const pdfContent = `
-REÇU DE PAIEMENT
-----------------------------------------
+REÇU DE PAIEMENT - BANK OF MOROCCO
+========================================
 Date: ${new Date(bill.paymentDate || new Date()).toLocaleDateString('fr-FR')}
+Heure: ${new Date(bill.paymentDate || new Date()).toLocaleTimeString('fr-FR')}
 Référence: ${bill.reference}
+
+DÉTAILS DE LA FACTURE
+----------------------------------------
 Émetteur: ${bill.type}
 Description: ${bill.description}
 Montant: ${bill.amount.toLocaleString('fr-MA')} MAD
 Status: ${bill.status === 'paid' ? 'Payé' : 'En attente'}
+Date d'échéance: ${new Date(bill.dueDate).toLocaleDateString('fr-FR')}
+${bill.paymentDate ? `Date de paiement: ${new Date(bill.paymentDate).toLocaleDateString('fr-FR')}` : ''}
+
+INFORMATIONS BANCAIRES
 ----------------------------------------
+Banque: Bank of Morocco
+Adresse: 123 Avenue Mohammed V, Casablanca
+Tel: +212 522 000 000
+Email: contact@bankofmorocco.ma
+Site web: www.bankofmorocco.ma
+
+========================================
 Ce document est un reçu officiel de paiement.
-Bank of Morocco
+Conservez-le pour vos archives.
+Date d'édition: ${new Date().toLocaleDateString('fr-FR')}
       `;
       
       // Créer un blob pour le PDF

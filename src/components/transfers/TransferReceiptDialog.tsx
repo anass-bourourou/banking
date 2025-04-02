@@ -10,6 +10,7 @@ import {
 import { Check, FileSpreadsheet, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { AccountService } from '@/services/AccountService';
 
 interface TransferReceiptDialogProps {
   isOpen: boolean;
@@ -23,6 +24,25 @@ const TransferReceiptDialog: React.FC<TransferReceiptDialogProps> = ({
   receipt
 }) => {
   const [isDownloading, setIsDownloading] = React.useState(false);
+  const [accountInfo, setAccountInfo] = React.useState<any>(null);
+
+  React.useEffect(() => {
+    if (isOpen && receipt && receipt.sender_account_id) {
+      fetchAccountInfo(receipt.sender_account_id);
+    }
+  }, [isOpen, receipt]);
+
+  const fetchAccountInfo = async (accountId: number) => {
+    try {
+      const accounts = await AccountService.getAccounts();
+      const account = accounts.find(a => a.id === accountId);
+      if (account) {
+        setAccountInfo(account);
+      }
+    } catch (error) {
+      console.error('Error fetching account info:', error);
+    }
+  };
 
   if (!receipt) return null;
   
@@ -31,23 +51,37 @@ const TransferReceiptDialog: React.FC<TransferReceiptDialogProps> = ({
     
     setTimeout(() => {
       try {
-        // Créer contenu PDF plus détaillé
+        // Créer contenu PDF plus détaillé avec les infos du compte
         const pdfContent = `
-REÇU DE VIREMENT
+REÇU DE VIREMENT - BANK OF MOROCCO
+========================================
+Date d'opération: ${new Date(receipt.date || receipt.execution_date || receipt.created_at).toLocaleDateString('fr-FR')}
+Heure d'opération: ${new Date(receipt.date || receipt.execution_date || receipt.created_at).toLocaleTimeString('fr-FR')}
+Référence: ${receipt.reference_id || receipt.reference_number || receipt.id || 'N/A'}
+
+DÉTAILS DU VIREMENT
 ----------------------------------------
-Date: ${new Date(receipt.date).toLocaleDateString('fr-FR')}
-Référence: ${receipt.reference_id || receipt.id || 'N/A'}
 Montant: ${receipt.amount.toLocaleString('fr-MA')} MAD
 Frais: ${receipt.fees ? receipt.fees.toLocaleString('fr-MA') : '0'} MAD
-Bénéficiaire: ${receipt.recipient_name || 'Non spécifié'}
-Compte bénéficiaire: ${receipt.recipient_account || 'Non spécifié'}
+Total débité: ${(receipt.amount + (receipt.fees || 0)).toLocaleString('fr-MA')} MAD
+Motif: ${receipt.motif || 'Non spécifié'}
 Type: ${
   receipt.transfer_type === 'standard' ? 'Virement standard' :
   receipt.transfer_type === 'instantané' ? 'Virement instantané' :
   receipt.transfer_type === 'multiple' ? 'Virement multiple' :
   receipt.transfer_type === 'planifié' ? 'Virement planifié' : 'Virement'
 }
-${receipt.motif ? `Motif: ${receipt.motif}` : ''}
+
+INFORMATIONS EXPÉDITEUR
+----------------------------------------
+${accountInfo ? `Compte: ${accountInfo.name}
+Numéro: ${accountInfo.number}
+IBAN: ${accountInfo.iban || 'Non spécifié'}` : 'Informations non disponibles'}
+
+INFORMATIONS BÉNÉFICIAIRE
+----------------------------------------
+Nom: ${receipt.recipient_name || (receipt.recipient_details ? receipt.recipient_details.name : 'Non spécifié')}
+Compte: ${receipt.recipient_account || (receipt.recipient_details ? receipt.recipient_details.account : 'Non spécifié')}
 
 INFORMATIONS BANCAIRES
 ----------------------------------------
@@ -57,9 +91,10 @@ Tel: +212 522 000 000
 Email: contact@bankofmorocco.ma
 Site web: www.bankofmorocco.ma
 
-----------------------------------------
+========================================
 Ce document est un reçu officiel de virement.
 Conservez-le pour vos archives.
+Date d'édition: ${new Date().toLocaleDateString('fr-FR')}
         `;
         
         // Créer un Blob représentant le fichier PDF
@@ -69,7 +104,7 @@ Conservez-le pour vos archives.
         // Créer un lien de téléchargement et déclencher le téléchargement
         const downloadLink = document.createElement('a');
         downloadLink.href = url;
-        downloadLink.download = `Recu-Virement-${receipt.reference_id || receipt.id || Date.now()}.pdf`;
+        downloadLink.download = `Recu-Virement-${receipt.reference_id || receipt.reference_number || receipt.id || Date.now()}.pdf`;
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
@@ -107,12 +142,12 @@ Conservez-le pour vos archives.
             <div className="space-y-3 text-sm">
               <div className="flex justify-between">
                 <span className="text-bank-gray">Date:</span>
-                <span>{new Date(receipt.date).toLocaleDateString('fr-FR')}</span>
+                <span>{new Date(receipt.date || receipt.execution_date || receipt.created_at).toLocaleDateString('fr-FR')}</span>
               </div>
               
               <div className="flex justify-between">
                 <span className="text-bank-gray">Référence:</span>
-                <span>{receipt.reference_id || receipt.id || 'N/A'}</span>
+                <span>{receipt.reference_id || receipt.reference_number || receipt.id || 'N/A'}</span>
               </div>
               
               <div className="flex justify-between">
@@ -125,15 +160,22 @@ Conservez-le pour vos archives.
                 <span>{receipt.fees ? receipt.fees.toLocaleString('fr-MA') : '0'} MAD</span>
               </div>
               
+              {accountInfo && (
+                <div className="flex justify-between">
+                  <span className="text-bank-gray">Compte source:</span>
+                  <span>{accountInfo.name}</span>
+                </div>
+              )}
+              
               <div className="flex justify-between">
                 <span className="text-bank-gray">Bénéficiaire:</span>
-                <span>{receipt.recipient_name || 'Non spécifié'}</span>
+                <span>{receipt.recipient_name || (receipt.recipient_details ? receipt.recipient_details.name : 'Non spécifié')}</span>
               </div>
               
-              {receipt.recipient_account && (
+              {(receipt.recipient_account || (receipt.recipient_details && receipt.recipient_details.account)) && (
                 <div className="flex justify-between">
                   <span className="text-bank-gray">Compte:</span>
-                  <span>{receipt.recipient_account}</span>
+                  <span>{receipt.recipient_account || receipt.recipient_details.account}</span>
                 </div>
               )}
               

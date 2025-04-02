@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +14,8 @@ import { AccountService } from '@/services/AccountService';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog';
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { format } from 'date-fns';
+import { SmsValidationService } from '@/services/SmsValidationService';
+import OTPValidationDialog from '@/components/transfers/OTPValidationDialog';
 
 const MoroccanBills = () => {
   const [selectedBill, setSelectedBill] = useState<Bill | null>(null);
@@ -24,6 +25,9 @@ const MoroccanBills = () => {
   const [billTypeFilter, setBillTypeFilter] = useState<'all' | 'DGI' | 'CIM' | 'OTHER'>('all');
   const [dateFilter, setDateFilter] = useState<'all' | 'thisMonth' | 'lastMonth' | 'thisYear'>('all');
   const [amountRange, setAmountRange] = useState<'all' | 'below500' | '500to1000' | 'above1000'>('all');
+  const [isOtpDialogOpen, setIsOtpDialogOpen] = useState(false);
+  const [validationId, setValidationId] = useState<number | null>(null);
+  const [isRequestingOtp, setIsRequestingOtp] = useState(false);
   
   const queryClient = useQueryClient();
   
@@ -63,7 +67,6 @@ const MoroccanBills = () => {
     return date.getFullYear() === now.getFullYear();
   };
   
-  // Filtrer les factures en fonction des critères
   const filteredBills = bills.filter((bill: Bill) => {
     const matchesSearch = 
       bill.reference.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -74,7 +77,6 @@ const MoroccanBills = () => {
       billTypeFilter === 'all' || 
       bill.type === billTypeFilter;
 
-    // Filter by date
     let matchesDate = true;
     if (dateFilter === 'thisMonth') {
       matchesDate = isThisMonth(bill.dueDate);
@@ -84,7 +86,6 @@ const MoroccanBills = () => {
       matchesDate = isThisYear(bill.dueDate);
     }
 
-    // Filter by amount
     let matchesAmount = true;
     if (amountRange === 'below500') {
       matchesAmount = bill.amount < 500;
@@ -97,13 +98,12 @@ const MoroccanBills = () => {
     return matchesSearch && matchesType && matchesDate && matchesAmount;
   });
   
-  // Mutation pour le paiement de facture
   const payBillMutation = useMutation({
-    mutationFn: () => {
+    mutationFn: async (validationCode?: string) => {
       if (!selectedBill || !paymentAccount) {
         throw new Error('Information de paiement manquante');
       }
-      return BillService.payBill(selectedBill.id, parseInt(paymentAccount));
+      return BillService.payBill(selectedBill.id, parseInt(paymentAccount), validationCode, validationId);
     },
     onSuccess: () => {
       toast.success('Facture payée avec succès', {
@@ -111,6 +111,8 @@ const MoroccanBills = () => {
       });
       setConfirmDialogOpen(false);
       setSelectedBill(null);
+      setIsOtpDialogOpen(false);
+      setValidationId(null);
       queryClient.invalidateQueries({ queryKey: ['moroccanBills'] });
       queryClient.invalidateQueries({ queryKey: ['accounts'] });
       queryClient.invalidateQueries({ queryKey: ['recentTransfers'] });
@@ -121,10 +123,47 @@ const MoroccanBills = () => {
       });
     },
   });
+
+  const requestOtpMutation = useMutation({
+    mutationFn: async () => {
+      if (!selectedBill || !paymentAccount) {
+        throw new Error('Information de paiement manquante');
+      }
+      
+      const account = accounts.find(a => a.id.toString() === paymentAccount);
+      if (!account || !account.phone_number) {
+        throw new Error('Numéro de téléphone non trouvé pour ce compte');
+      }
+      
+      return SmsValidationService.requestSmsValidation(
+        'paiement_facture',
+        {
+          billId: selectedBill.id,
+          accountId: parseInt(paymentAccount),
+          amount: selectedBill.amount
+        },
+        account.phone_number
+      );
+    },
+    onSuccess: (data) => {
+      setValidationId(data.validationId);
+      setIsOtpDialogOpen(true);
+      toast.success('Code OTP envoyé', {
+        description: 'Veuillez saisir le code reçu par SMS pour confirmer le paiement'
+      });
+    },
+    onError: (error) => {
+      toast.error('Erreur lors de l\'envoi du code OTP', {
+        description: error instanceof Error ? error.message : 'Une erreur est survenue'
+      });
+    },
+    onSettled: () => {
+      setIsRequestingOtp(false);
+    }
+  });
   
   const handlePayBill = (bill: Bill) => {
     setSelectedBill(bill);
-    // Présélectionner le premier compte si disponible
     if (accounts.length > 0 && !paymentAccount) {
       setPaymentAccount(accounts[0].id.toString());
     }
@@ -132,7 +171,18 @@ const MoroccanBills = () => {
   };
   
   const confirmPayment = () => {
-    payBillMutation.mutate();
+    setIsRequestingOtp(true);
+    requestOtpMutation.mutate();
+  };
+
+  const handleOtpValidate = async (code: string) => {
+    try {
+      await payBillMutation.mutateAsync(code);
+      return true;
+    } catch (error) {
+      console.error('OTP validation error:', error);
+      return false;
+    }
   };
   
   const getBillTypeIcon = (type: string) => {
@@ -375,7 +425,6 @@ const MoroccanBills = () => {
         </TabsContent>
       </Tabs>
       
-      {/* Dialogue de confirmation de paiement */}
       <Dialog open={confirmDialogOpen} onOpenChange={setConfirmDialogOpen}>
         <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
@@ -428,29 +477,38 @@ const MoroccanBills = () => {
             <div className="flex items-center p-3 bg-amber-50 rounded-lg">
               <AlertCircle className="text-amber-500 mr-2 h-5 w-5" />
               <p className="text-sm text-amber-700">
-                Ce paiement sera immédiatement débité de votre compte.
+                Ce paiement sera validé par code SMS pour votre sécurité.
               </p>
             </div>
           </div>
           
           <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setConfirmDialogOpen(false)}
-              disabled={payBillMutation.isPending}
-            >
+            <Button variant="outline" onClick={() => setConfirmDialogOpen(false)}>
               Annuler
             </Button>
             <Button 
-              onClick={confirmPayment}
-              className="bg-bank-primary hover:bg-bank-primary-dark"
-              disabled={payBillMutation.isPending || !paymentAccount}
+              onClick={confirmPayment} 
+              disabled={!paymentAccount || isRequestingOtp || payBillMutation.isPending}
             >
-              {payBillMutation.isPending ? 'Traitement...' : 'Confirmer le paiement'}
+              {isRequestingOtp ? (
+                <>
+                  <span className="animate-spin mr-2">⭘</span>
+                  Envoi du code...
+                </>
+              ) : (
+                'Procéder au paiement'
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <OTPValidationDialog 
+        isOpen={isOtpDialogOpen}
+        onClose={() => setIsOtpDialogOpen(false)}
+        onValidate={handleOtpValidate}
+        isValidating={payBillMutation.isPending}
+      />
     </AppLayout>
   );
 };

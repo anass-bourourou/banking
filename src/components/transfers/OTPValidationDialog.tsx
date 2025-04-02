@@ -39,8 +39,8 @@ const OTPValidationDialog: React.FC<OTPValidationDialogProps> = ({
         <DialogHeader>
           <DialogTitle>Validation par SMS</DialogTitle>
           <DialogDescription>
-            Un code de validation a été envoyé par SMS au numéro de téléphone associé à votre compte.
-            Veuillez entrer ce code pour confirmer le virement.
+            Un code de validation à 6 chiffres a été envoyé par SMS au numéro de téléphone associé à votre compte.
+            Veuillez entrer ce code pour confirmer l'opération.
           </DialogDescription>
         </DialogHeader>
         
