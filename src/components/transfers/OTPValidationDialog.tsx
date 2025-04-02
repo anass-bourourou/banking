@@ -12,7 +12,7 @@ import OTPValidation from '@/components/common/OTPValidation';
 interface OTPValidationDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onValidate: (code: string) => Promise<void>;
+  onValidate: (code: string) => Promise<boolean>;
   isValidating: boolean;
 }
 
@@ -25,8 +25,8 @@ const OTPValidationDialog: React.FC<OTPValidationDialogProps> = ({
   // Wrapper pour adapter l'interface de OTPValidation
   const handleValidate = async (code: string): Promise<boolean> => {
     try {
-      await onValidate(code);
-      return true;
+      const result = await onValidate(code);
+      return result;
     } catch (error) {
       console.error("Validation error:", error);
       return false;
