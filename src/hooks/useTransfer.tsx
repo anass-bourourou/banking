@@ -94,10 +94,10 @@ export function useTransfer(options: UseTransferOptions = {}) {
     }
   };
 
-  const handleSmsValidation = async (code: string) => {
+  const handleSmsValidation = async (code: string): Promise<boolean> => {
     if (!smsValidationId || !pendingTransferData) {
       toast.error('Informations de validation incomplètes');
-      return;
+      return false;
     }
     
     try {
@@ -114,9 +114,11 @@ export function useTransfer(options: UseTransferOptions = {}) {
       } else {
         await transferMutation.mutateAsync(transferDataWithValidation);
       }
+      
+      return true;
     } catch (error) {
       console.error('Error validating transfer:', error);
-      throw error;
+      return false;
     }
   };
 
