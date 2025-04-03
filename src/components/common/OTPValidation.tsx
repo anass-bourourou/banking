@@ -29,12 +29,14 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
   const [code, setCode] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [clickedNumbers, setClickedNumbers] = useState<string[]>([]);
 
   // Fonction pour réinitialiser l'état à la fermeture
   useEffect(() => {
     if (!isOpen) {
       setCode("");
       setError(null);
+      setClickedNumbers([]);
     }
   }, [isOpen]);
 
@@ -66,17 +68,20 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
   const handleKeyPress = (digit: string) => {
     if (code.length < 6) {
       setCode(prevCode => prevCode + digit);
+      setClickedNumbers(prev => [...prev, digit]);
     }
   };
 
   // Fonction pour supprimer le dernier chiffre
   const handleBackspace = () => {
     setCode(prevCode => prevCode.slice(0, -1));
+    setClickedNumbers(prev => prev.slice(0, -1));
   };
 
   // Fonction pour effacer tout le code
   const handleClear = () => {
     setCode("");
+    setClickedNumbers([]);
   };
 
   // Générer les touches du clavier visuel
@@ -125,6 +130,12 @@ const OTPValidation: React.FC<OTPValidationProps> = ({
         
         {error && (
           <p className="mt-2 text-sm text-red-500">{error}</p>
+        )}
+
+        {clickedNumbers.length > 0 && (
+          <div className="mt-3 bg-gray-100 p-2 rounded-md text-sm">
+            <p className="font-medium text-gray-600">Numéros saisis: {clickedNumbers.join(' - ')}</p>
+          </div>
         )}
 
         {visualKeyboard && renderKeyboard()}

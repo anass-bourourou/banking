@@ -12,6 +12,12 @@ import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
 import { CreditCard, Calendar as CalendarIcon, Receipt, FileText, CheckCircle2 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
+import { AccountService } from '@/services/AccountService';
+import VignettePayment from '@/components/payments/VignettePayment';
+import EDocuments from '@/components/payments/EDocuments';
+import OTPValidationDialog from '@/components/transfers/OTPValidationDialog'; 
+import { useTransfer } from '@/hooks/useTransfer';
 
 const Payments = () => {
   const [paymentType, setPaymentType] = useState('bill');
@@ -21,10 +27,17 @@ const Payments = () => {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [sourceAccount, setSourceAccount] = useState('');
   
-  const accounts = [
-    { id: '1', name: 'Compte Courant', balance: 4850.75 },
-    { id: '2', name: 'Compte Épargne', balance: 12350.20 },
-  ];
+  const { data: accounts = [], isLoading: isLoadingAccounts } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: AccountService.getAccounts,
+  });
+  
+  const { 
+    isSmsDialogOpen, 
+    requestValidation, 
+    validateSms, 
+    closeSmsDialog 
+  } = useTransfer();
   
   const payees = [
     { id: '1', name: 'EDF Électricité' },
@@ -33,7 +46,7 @@ const Payments = () => {
     { id: '4', name: 'Assurance Habitation' },
   ];
   
-  const handlePaymentSubmit = (e: React.FormEvent) => {
+  const handlePaymentSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!payee || !amount || !sourceAccount) {
@@ -43,17 +56,16 @@ const Payments = () => {
       return;
     }
     
-    const selectedPayee = payees.find(p => p.id === payee);
+    // Préparer les données pour le paiement
+    const transferData = {
+      fromAccountId: parseInt(sourceAccount),
+      amount: parseFloat(amount),
+      motif: `Paiement facture - ${payees.find(p => p.id === payee)?.name}`,
+      description: reference ? `Réf: ${reference}` : undefined
+    };
     
-    toast.success('Paiement effectué avec succès', {
-      description: `Paiement de ${parseFloat(amount).toLocaleString('fr-FR')}€ à ${selectedPayee?.name}`,
-    });
-    
-    // Reset form
-    setPayee('');
-    setAmount('');
-    setReference('');
-    setDate(new Date());
+    // Demander la validation par SMS
+    await requestValidation(transferData);
   };
   
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -86,8 +98,10 @@ const Payments = () => {
       <Tabs defaultValue="new" className="space-y-4">
         <TabsList>
           <TabsTrigger value="new">Nouveau paiement</TabsTrigger>
+          <TabsTrigger value="vignette">Paiement vignette</TabsTrigger>
           <TabsTrigger value="upcoming">Paiements à venir</TabsTrigger>
           <TabsTrigger value="history">Historique</TabsTrigger>
+          <TabsTrigger value="documents">E-Documents</TabsTrigger>
         </TabsList>
         
         <TabsContent value="new">
@@ -139,7 +153,7 @@ const Payments = () => {
                         onChange={handleAmountChange}
                       />
                       <div className="absolute inset-y-0 left-3 flex items-center text-bank-gray">
-                        €
+                        MAD
                       </div>
                     </div>
                   </div>
@@ -187,8 +201,8 @@ const Payments = () => {
                       </SelectTrigger>
                       <SelectContent>
                         {accounts.map((account) => (
-                          <SelectItem key={account.id} value={account.id}>
-                            {account.name} - {account.balance.toLocaleString('fr-FR')}€
+                          <SelectItem key={account.id} value={account.id.toString()}>
+                            {account.name} - {account.balance.toLocaleString('fr-MA')} MAD
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -202,6 +216,14 @@ const Payments = () => {
               </form>
             </CardContent>
           </Card>
+        </TabsContent>
+        
+        <TabsContent value="vignette">
+          <VignettePayment accounts={accounts} />
+        </TabsContent>
+        
+        <TabsContent value="documents">
+          <EDocuments />
         </TabsContent>
         
         <TabsContent value="upcoming">
@@ -224,7 +246,7 @@ const Payments = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-medium text-red-600">{payment.amount.toLocaleString('fr-FR')} €</p>
+                      <p className="font-medium text-red-600">{payment.amount.toLocaleString('fr-MA')} MAD</p>
                       <div className="mt-1 rounded-full bg-yellow-100 px-2 py-1 text-xs font-medium text-yellow-600">
                         {payment.status}
                       </div>
@@ -272,7 +294,7 @@ const Payments = () => {
                       </div>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <p className="font-medium text-red-600">{payment.amount.toLocaleString('fr-FR')} €</p>
+                      <p className="font-medium text-red-600">{payment.amount.toLocaleString('fr-MA')} MAD</p>
                       <button className="rounded-full bg-bank-gray-light p-2 text-bank-dark hover:bg-bank-gray">
                         <Receipt size={16} />
                       </button>
@@ -284,6 +306,12 @@ const Payments = () => {
           </Card>
         </TabsContent>
       </Tabs>
+      
+      <OTPValidationDialog
+        isOpen={isSmsDialogOpen}
+        onClose={closeSmsDialog}
+        onValidate={validateSms}
+      />
     </AppLayout>
   );
 };
