@@ -12,7 +12,7 @@ import Transfers from '@/pages/Transfers';
 import Beneficiaries from '@/pages/Beneficiaries';
 import Dashboard from '@/pages/Dashboard';
 import Payments from '@/pages/Payments';
-import Statements from '@/pages/Statements';
+import EDocuments from '@/pages/EDocuments';
 import Settings from '@/pages/Settings';
 import NotFound from '@/pages/NotFound';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
@@ -51,7 +51,7 @@ function App() {
               <Route path="/transfers" element={<ProtectedRoute><Transfers /></ProtectedRoute>} />
               <Route path="/beneficiaries" element={<ProtectedRoute><Beneficiaries /></ProtectedRoute>} />
               <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
-              <Route path="/statements" element={<ProtectedRoute><Statements /></ProtectedRoute>} />
+              <Route path="/e-documents" element={<ProtectedRoute><EDocuments /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/bills" element={<ProtectedRoute><Bills /></ProtectedRoute>} />
               <Route path="/moroccan-bills" element={<ProtectedRoute><MoroccanBills /></ProtectedRoute>} />

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -17,7 +16,6 @@ import {
   FileSpreadsheet
 } from 'lucide-react';
 
-// Add the interface to accept the open prop if needed
 interface SidebarProps {
   open?: boolean;
 }
@@ -56,9 +54,9 @@ const Sidebar: React.FC<SidebarProps> = () => {
       path: '/beneficiaries',
     },
     {
-      icon: FileSpreadsheet,
-      label: 'Relevés',
-      path: '/statements',
+      icon: FileText,
+      label: 'E-Documents',
+      path: '/e-documents',
     },
     {
       icon: Receipt,
