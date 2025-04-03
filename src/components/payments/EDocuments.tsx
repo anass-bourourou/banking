@@ -10,7 +10,7 @@ import { StatementService } from '@/services/StatementService';
 interface Document {
   id: string;
   title: string;
-  type: 'statement' | 'certificate' | 'receipt';
+  type: 'statement' | 'certificate' | 'attestation';
   date: string;
   fileUrl?: string;
 }
@@ -19,7 +19,7 @@ const EDocuments: React.FC = () => {
   const [selectedDocument, setSelectedDocument] = useState<Document | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
-  // Documents factices pour la démo
+  // Documents fictifs pour la démo
   const statements = [
     { id: '1', title: 'Relevé bancaire - Janvier 2023', type: 'statement' as const, date: '01/02/2023' },
     { id: '2', title: 'Relevé bancaire - Février 2023', type: 'statement' as const, date: '01/03/2023' },
@@ -32,10 +32,10 @@ const EDocuments: React.FC = () => {
     { id: '6', title: 'Attestation de solde', type: 'certificate' as const, date: '05/03/2023' },
   ];
   
-  const receipts = [
-    { id: '7', title: 'Reçu paiement vignette', type: 'receipt' as const, date: '20/01/2023' },
-    { id: '8', title: 'Reçu paiement facture Eau', type: 'receipt' as const, date: '12/02/2023' },
-    { id: '9', title: 'Reçu paiement facture Électricité', type: 'receipt' as const, date: '05/03/2023' },
+  const attestations = [
+    { id: '7', title: 'Attestation de compte', type: 'attestation' as const, date: '20/01/2023' },
+    { id: '8', title: 'Attestation de prélèvement', type: 'attestation' as const, date: '12/02/2023' },
+    { id: '9', title: 'Attestation de caution', type: 'attestation' as const, date: '05/03/2023' },
   ];
 
   const handleDownload = async (document: Document) => {
@@ -79,7 +79,7 @@ const EDocuments: React.FC = () => {
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bank-primary/10">
                 {doc.type === 'statement' && <FileSpreadsheet className="h-5 w-5 text-bank-primary" />}
                 {doc.type === 'certificate' && <Award className="h-5 w-5 text-green-600" />}
-                {doc.type === 'receipt' && <FileText className="h-5 w-5 text-blue-600" />}
+                {doc.type === 'attestation' && <FileText className="h-5 w-5 text-blue-600" />}
               </div>
               <div>
                 <p className="font-medium">{doc.title}</p>
@@ -140,8 +140,8 @@ const EDocuments: React.FC = () => {
         <Tabs defaultValue="statements" className="space-y-4">
           <TabsList>
             <TabsTrigger value="statements">Relevés bancaires</TabsTrigger>
-            <TabsTrigger value="certificates">Attestations</TabsTrigger>
-            <TabsTrigger value="receipts">Reçus de paiement</TabsTrigger>
+            <TabsTrigger value="certificates">Attestations RIB</TabsTrigger>
+            <TabsTrigger value="attestations">Autres attestations</TabsTrigger>
           </TabsList>
           
           <TabsContent value="statements">
@@ -152,8 +152,8 @@ const EDocuments: React.FC = () => {
             {renderDocumentsList(certificates)}
           </TabsContent>
           
-          <TabsContent value="receipts">
-            {renderDocumentsList(receipts)}
+          <TabsContent value="attestations">
+            {renderDocumentsList(attestations)}
           </TabsContent>
         </Tabs>
       </CardContent>

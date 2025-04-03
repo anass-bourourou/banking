@@ -64,7 +64,7 @@ const Sidebar: React.FC<SidebarProps> = () => {
       submenu: [
         {
           label: 'Paiements',
-          path: '/payments',
+          path: '/bills',
         },
         {
           label: 'Factures DGI & CIM',
