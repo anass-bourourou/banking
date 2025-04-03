@@ -1,183 +1,81 @@
 
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Loader2, Car, FileCheck } from 'lucide-react';
-import { toast } from 'sonner';
-import { useTransfer } from '@/hooks/useTransfer';
-import OTPValidationDialog from '@/components/transfers/OTPValidationDialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Loader2, Car, FileText } from "lucide-react";
+import { toast } from "sonner";
 
 interface VignettePaymentProps {
   accounts: any[];
+  onSubmit?: (data: any) => void;
+  isSubmitting?: boolean;
 }
 
-const VignettePayment: React.FC<VignettePaymentProps> = ({ accounts }) => {
-  const [matriculation, setMatriculation] = useState('');
-  const [vehicleType, setVehicleType] = useState('');
-  const [vignetteType, setVignetteType] = useState('');
-  const [amount, setAmount] = useState('');
-  const [sourceAccount, setSourceAccount] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  const { 
-    isSmsDialogOpen, 
-    requestValidation, 
-    validateSms, 
-    closeSmsDialog 
-  } = useTransfer();
+const VignettePayment: React.FC<VignettePaymentProps> = ({ 
+  accounts, 
+  onSubmit,
+  isSubmitting = false
+}) => {
+  const [selectedAccount, setSelectedAccount] = useState("");
+  const [vehicleType, setVehicleType] = useState("");
+  const [licensePlate, setLicensePlate] = useState("");
+  const [amount, setAmount] = useState("");
+  const [activeTab, setActiveTab] = useState("single");
 
-  const vehicleTypes = [
-    { id: 'car', name: 'Voiture de tourisme' },
-    { id: 'truck', name: 'Camion' },
-    { id: 'motorcycle', name: 'Moto' },
-  ];
-
-  const vignetteTypes = [
-    { id: 'annual', name: 'Annuelle', basePrices: { car: 800, truck: 1200, motorcycle: 400 } },
-    { id: 'semiannual', name: 'Semestrielle', basePrices: { car: 450, truck: 700, motorcycle: 250 } },
-    { id: 'quarterly', name: 'Trimestrielle', basePrices: { car: 250, truck: 400, motorcycle: 150 } },
-  ];
-
-  const handleMatriculationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Format matriculation (remove spaces, capitalize)
-    const formattedValue = e.target.value.toUpperCase().replace(/\s/g, '');
-    setMatriculation(formattedValue);
-  };
-
-  const handleVehicleTypeChange = (value: string) => {
-    setVehicleType(value);
-    // Update amount if vignette type is also selected
-    if (vignetteType) {
-      const selectedVignette = vignetteTypes.find(v => v.id === vignetteType);
-      if (selectedVignette) {
-        const price = selectedVignette.basePrices[value as keyof typeof selectedVignette.basePrices];
-        setAmount(price.toString());
-      }
-    }
-  };
-
-  const handleVignetteTypeChange = (value: string) => {
-    setVignetteType(value);
-    // Update amount if vehicle type is also selected
-    if (vehicleType) {
-      const selectedVignette = vignetteTypes.find(v => v.id === value);
-      if (selectedVignette) {
-        const price = selectedVignette.basePrices[vehicleType as keyof typeof selectedVignette.basePrices];
-        setAmount(price.toString());
-      }
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!matriculation || !vehicleType || !vignetteType || !sourceAccount) {
-      toast.error('Formulaire incomplet', {
-        description: 'Veuillez remplir tous les champs obligatoires',
-      });
+    if (!selectedAccount || !vehicleType || !licensePlate || !amount) {
+      toast.error("Veuillez remplir tous les champs obligatoires");
       return;
     }
     
-    setIsLoading(true);
+    const paymentData = {
+      accountId: parseInt(selectedAccount),
+      vehicleType,
+      licensePlate,
+      amount: parseFloat(amount),
+      description: `Paiement vignette ${licensePlate}`
+    };
     
-    try {
-      // Préparer les données pour la vignette
-      const transferData = {
-        fromAccountId: parseInt(sourceAccount),
-        amount: parseFloat(amount),
-        motif: `Paiement vignette - ${matriculation}`,
-        description: `Vignette ${vehicleType} - ${vignetteTypes.find(v => v.id === vignetteType)?.name}`
-      };
-      
-      // Demander la validation par SMS
-      await requestValidation(transferData);
-    } catch (error) {
-      toast.error('Erreur de paiement', {
-        description: 'Impossible de traiter votre demande',
+    if (onSubmit) {
+      onSubmit(paymentData);
+    } else {
+      // Simulation d'un paiement réussi
+      toast.success("Paiement en cours de traitement", {
+        description: `Vignette pour ${licensePlate}`
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
   return (
-    <>
-      <Card>
-        <CardHeader>
-          <div className="flex items-center space-x-2">
-            <Car className="h-5 w-5 text-bank-primary" />
-            <div>
-              <CardTitle>Paiement de vignette</CardTitle>
-              <CardDescription>Réglez votre vignette automobile en ligne</CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-4">
+    <Card className="w-full">
+      <CardHeader>
+        <CardTitle className="flex items-center space-x-2">
+          <Car className="h-5 w-5 text-bank-primary" />
+          <span>Paiement de Vignette</span>
+        </CardTitle>
+        <CardDescription>
+          Payez votre vignette automobile rapidement et en toute sécurité
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="single">Vignette unique</TabsTrigger>
+            <TabsTrigger value="multiple">Vignettes multiples</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="single" className="space-y-4 mt-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="matriculation">Immatriculation du véhicule</Label>
-                <Input
-                  id="matriculation"
-                  className="bank-input"
-                  placeholder="Ex: 123456A"
-                  value={matriculation}
-                  onChange={handleMatriculationChange}
-                  required
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="vehicle-type">Type de véhicule</Label>
-                <Select value={vehicleType} onValueChange={handleVehicleTypeChange} required>
-                  <SelectTrigger id="vehicle-type" className="bank-input">
-                    <SelectValue placeholder="Sélectionnez un type de véhicule" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vehicleTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="vignette-type">Type de vignette</Label>
-                <Select value={vignetteType} onValueChange={handleVignetteTypeChange} required>
-                  <SelectTrigger id="vignette-type" className="bank-input">
-                    <SelectValue placeholder="Sélectionnez un type de vignette" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {vignetteTypes.map((type) => (
-                      <SelectItem key={type.id} value={type.id}>{type.name}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="amount">Montant</Label>
-                <div className="relative">
-                  <Input
-                    id="amount"
-                    className="bank-input pl-8"
-                    placeholder="0.00"
-                    value={amount}
-                    readOnly
-                  />
-                  <div className="absolute inset-y-0 left-3 flex items-center text-bank-gray">
-                    MAD
-                  </div>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                <Label htmlFor="source-account">Compte source</Label>
-                <Select value={sourceAccount} onValueChange={setSourceAccount} required>
-                  <SelectTrigger id="source-account" className="bank-input">
+                <Label htmlFor="account">Compte source</Label>
+                <Select value={selectedAccount} onValueChange={setSelectedAccount}>
+                  <SelectTrigger id="account">
                     <SelectValue placeholder="Sélectionnez un compte" />
                   </SelectTrigger>
                   <SelectContent>
@@ -189,28 +87,69 @@ const VignettePayment: React.FC<VignettePaymentProps> = ({ accounts }) => {
                   </SelectContent>
                 </Select>
               </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="vehicleType">Type de véhicule</Label>
+                <Select value={vehicleType} onValueChange={setVehicleType}>
+                  <SelectTrigger id="vehicleType">
+                    <SelectValue placeholder="Sélectionnez le type de véhicule" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="voiture">Voiture de tourisme</SelectItem>
+                    <SelectItem value="utilitaire">Véhicule utilitaire</SelectItem>
+                    <SelectItem value="moto">Motocyclette</SelectItem>
+                    <SelectItem value="camion">Camion</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="licensePlate">Immatriculation</Label>
+                <Input
+                  id="licensePlate"
+                  placeholder="123456-A-7"
+                  value={licensePlate}
+                  onChange={(e) => setLicensePlate(e.target.value)}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <Label htmlFor="amount">Montant (MAD)</Label>
+                <Input
+                  id="amount"
+                  type="number"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                />
+              </div>
+              
+              <Button type="submit" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    Traitement en cours...
+                  </>
+                ) : (
+                  "Payer la vignette"
+                )}
+              </Button>
+            </form>
+          </TabsContent>
+          
+          <TabsContent value="multiple" className="space-y-4 mt-4">
+            <div className="flex flex-col items-center justify-center py-10 text-center">
+              <FileText className="h-16 w-16 text-bank-gray-light mb-4" />
+              <h3 className="text-lg font-medium mb-2">Paiement par lot</h3>
+              <p className="text-bank-gray mb-4">
+                Payez plusieurs vignettes en une seule opération en téléchargeant un fichier CSV
+              </p>
+              <Button>Télécharger un modèle CSV</Button>
             </div>
-            
-            <Button type="submit" className="bank-button w-full" disabled={isLoading}>
-              {isLoading ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  Traitement...
-                </>
-              ) : (
-                "Payer la vignette"
-              )}
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
-      
-      <OTPValidationDialog
-        isOpen={isSmsDialogOpen}
-        onClose={closeSmsDialog}
-        onValidate={validateSms}
-      />
-    </>
+          </TabsContent>
+        </Tabs>
+      </CardContent>
+    </Card>
   );
 };
 
