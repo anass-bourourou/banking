@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { FileText, FileSpreadsheet, FileCertificate, Download, Eye } from 'lucide-react';
+import { FileText, FileSpreadsheet, Award, Download, Eye } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { StatementService } from '@/services/StatementService';
@@ -78,7 +78,7 @@ const EDocuments: React.FC = () => {
             <div className="flex items-center space-x-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-full bg-bank-primary/10">
                 {doc.type === 'statement' && <FileSpreadsheet className="h-5 w-5 text-bank-primary" />}
-                {doc.type === 'certificate' && <FileCertificate className="h-5 w-5 text-green-600" />}
+                {doc.type === 'certificate' && <Award className="h-5 w-5 text-green-600" />}
                 {doc.type === 'receipt' && <FileText className="h-5 w-5 text-blue-600" />}
               </div>
               <div>
