@@ -7,15 +7,18 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { AlertCircle } from 'lucide-react';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const { login, isLoading } = useAuth();
   const navigate = useNavigate();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setError('');
     
     try {
       await login({ username, password });
@@ -26,8 +29,11 @@ const Login = () => {
       
       navigate('/');
     } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : 'Identifiants incorrects, veuillez réessayer';
+      setError(errorMessage);
+      
       toast.error('Échec de la connexion', {
-        description: error instanceof Error ? error.message : 'Identifiants incorrects, veuillez réessayer'
+        description: errorMessage
       });
     }
   };
@@ -47,6 +53,13 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
+          {error && (
+            <div className="mb-4 flex items-center rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
+              <AlertCircle className="mr-2 h-4 w-4" />
+              {error}
+            </div>
+          )}
+          
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Identifiant</Label>

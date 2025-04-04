@@ -1,6 +1,4 @@
-
-// Base API service for making HTTP requests
-// This would be expanded in a real application to include more API endpoints
+// Base API service for making HTTP requests to Express backend
 
 import { Account } from './AccountService';
 import { Beneficiary } from './BeneficiaryService';
@@ -20,34 +18,51 @@ export interface Transaction {
   fees?: number;
 }
 
-const BASE_URL = 'https://api.example.ma'; // Replace with actual API URL in production
+// Change this to your Express.js backend URL (e.g., localhost in development, or deployed URL in production)
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-// Simulated API delay
-const API_DELAY = 800;
+// Auth token management
+const getAuthToken = () => {
+  return localStorage.getItem('auth_token');
+};
 
-// Helper to simulate API delay
-const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+// Helper to check if we're in mock mode or should use real API
+const useMockData = () => {
+  return import.meta.env.VITE_USE_MOCK_DATA === 'true' || !API_URL;
+};
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
-  // In a real app, this would add authentication headers
+  // If using mock data, return mock response
+  if (useMockData()) {
+    console.log(`Using mock data for ${endpoint}`);
+    return mockApiResponse(endpoint, options.method || 'GET', options.body);
+  }
+
   const headers = {
     'Content-Type': 'application/json',
+    ...(getAuthToken() ? { 'Authorization': `Bearer ${getAuthToken()}` } : {}),
     ...(options.headers || {}),
   };
 
-  // Simulate API delay
-  await delay(API_DELAY);
+  try {
+    const response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
 
-  // Simulate API response
-  // In a real app, this would be a fetch call
-  console.log(`API call to ${endpoint} with options:`, options);
-  
-  // For demo purposes, we're not making actual HTTP requests
-  // Instead, we're returning mock data based on the endpoint and method
-  return mockApiResponse(endpoint, options.method || 'GET', options.body);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `API error: ${response.status}`);
+    }
+
+    return response;
+  } catch (error) {
+    console.error(`API call to ${endpoint} failed:`, error);
+    throw error;
+  }
 }
 
-// Mock API response function
+// Mock API response function for development/fallback
 async function mockApiResponse(endpoint: string, method: string, body?: any) {
   // Parse the body if it's a string
   let parsedBody = body;
@@ -55,10 +70,11 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
     try {
       parsedBody = JSON.parse(body);
     } catch (e) {
-      // If it's not valid JSON, keep it as is
       parsedBody = body;
     }
   }
+
+  console.log(`[MOCK] ${method} ${endpoint}`, parsedBody);
 
   // Simulate different responses based on endpoint and method
   if (method === 'GET') {
@@ -122,7 +138,7 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
   };
 }
 
-// Mock API functions
+// Mock API functions - will be used when API_URL is not provided or in mock mode
 export const api = {
   // Account related endpoints
   accounts: {
