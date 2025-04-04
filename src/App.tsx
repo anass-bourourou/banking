@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -26,7 +25,6 @@ import Notifications from '@/pages/Notifications';
 
 import './App.css';
 
-// Create a client
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -36,7 +34,6 @@ const queryClient = new QueryClient({
   },
 });
 
-// Session timeout component
 const SessionTimeout: React.FC = () => {
   const { isAuthenticated, logout } = useAuth();
   const navigate = useNavigate();
@@ -50,26 +47,23 @@ const SessionTimeout: React.FC = () => {
       setLastActivity(Date.now());
     };
 
-    // Add event listeners to reset the timer on user activity
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
     events.forEach(event => {
       window.addEventListener(event, resetTimer);
     });
 
-    // Check if session has timed out
     const intervalId = setInterval(() => {
       const now = Date.now();
       if (now - lastActivity > timeoutDuration) {
         logout();
         navigate('/login');
-        // Add toast message for session timeout
         toast({
           title: "Session expirée",
           description: "Votre session a expiré en raison d'inactivité. Veuillez vous reconnecter.",
           variant: "destructive",
         });
       }
-    }, 60000); // Check every minute
+    }, 60000);
 
     return () => {
       events.forEach(event => {
