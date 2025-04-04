@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
@@ -15,9 +14,16 @@ import { useTransfer } from '@/hooks/useTransfer';
 interface NewPaymentFormProps {
   accounts: any[];
   isLoadingAccounts: boolean;
+  onSubmit?: (paymentData: any) => void;
+  isSubmitting?: boolean;
 }
 
-const NewPaymentForm: React.FC<NewPaymentFormProps> = ({ accounts, isLoadingAccounts }) => {
+const NewPaymentForm: React.FC<NewPaymentFormProps> = ({ 
+  accounts, 
+  isLoadingAccounts,
+  onSubmit,
+  isSubmitting = false
+}) => {
   const [paymentType, setPaymentType] = useState('bill');
   const [payee, setPayee] = useState('');
   const [amount, setAmount] = useState('');
@@ -52,8 +58,12 @@ const NewPaymentForm: React.FC<NewPaymentFormProps> = ({ accounts, isLoadingAcco
       description: reference ? `Réf: ${reference}` : undefined
     };
     
-    // Demander la validation par SMS
-    await requestValidation(transferData);
+    if (onSubmit) {
+      onSubmit(transferData);
+    } else {
+      // Si pas de callback onSubmit, utiliser la validation par défaut
+      await requestValidation(transferData);
+    }
   };
   
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -169,8 +179,12 @@ const NewPaymentForm: React.FC<NewPaymentFormProps> = ({ accounts, isLoadingAcco
             </div>
           </div>
           
-          <button type="submit" className="bank-button w-full">
-            Effectuer le paiement
+          <button 
+            type="submit" 
+            className="bank-button w-full" 
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? 'Traitement en cours...' : 'Effectuer le paiement'}
           </button>
         </form>
       </CardContent>
