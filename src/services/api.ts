@@ -1,3 +1,4 @@
+
 // Base API service for making HTTP requests to Express backend
 
 import { Account } from './AccountService';
@@ -24,9 +25,9 @@ const getAuthToken = () => {
   return localStorage.getItem('auth_token');
 };
 
-// Helper to check if we're in mock mode or should use real API
+// Helper to check if we're in mock mode or should use real API - always returns false
 const useMockData = () => {
-  return false; // Always use backend API
+  return false; // Always use backend API, never use mock data unless API fails
 };
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
