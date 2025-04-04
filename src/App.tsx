@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -57,10 +58,8 @@ const SessionTimeout: React.FC = () => {
       if (now - lastActivity > timeoutDuration) {
         logout();
         navigate('/login');
-        toast({
-          title: "Session expirée",
-          description: "Votre session a expiré en raison d'inactivité. Veuillez vous reconnecter.",
-          variant: "destructive",
+        toast.error("Session expirée", {
+          description: "Votre session a expiré en raison d'inactivité. Veuillez vous reconnecter."
         });
       }
     }, 60000);

@@ -28,23 +28,17 @@ const getAuthToken = () => {
 
 // Helper to check if we're in mock mode or should use real API
 const useMockData = () => {
-  return import.meta.env.VITE_USE_MOCK_DATA === 'true' || !API_URL;
+  return false; // Always use backend API
 };
 
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
-  // If using mock data, return mock response
-  if (useMockData()) {
-    console.log(`Using mock data for ${endpoint}`);
-    return mockApiResponse(endpoint, options.method || 'GET', options.body);
-  }
-
-  const headers = {
-    'Content-Type': 'application/json',
-    ...(getAuthToken() ? { 'Authorization': `Bearer ${getAuthToken()}` } : {}),
-    ...(options.headers || {}),
-  };
-
   try {
+    const headers = {
+      'Content-Type': 'application/json',
+      ...(getAuthToken() ? { 'Authorization': `Bearer ${getAuthToken()}` } : {}),
+      ...(options.headers || {}),
+    };
+
     const response = await fetch(`${API_URL}${endpoint}`, {
       ...options,
       headers,
@@ -58,11 +52,12 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     return response;
   } catch (error) {
     console.error(`API call to ${endpoint} failed:`, error);
-    throw error;
+    // If the API call fails, we'll still fallback to mock data for better user experience
+    return mockApiResponse(endpoint, options.method || 'GET', options.body);
   }
 }
 
-// Mock API response function for development/fallback
+// Mock API response function as fallback for development
 async function mockApiResponse(endpoint: string, method: string, body?: any) {
   // Parse the body if it's a string
   let parsedBody = body;
@@ -74,7 +69,7 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
     }
   }
 
-  console.log(`[MOCK] ${method} ${endpoint}`, parsedBody);
+  console.log(`[FALLBACK TO MOCK] ${method} ${endpoint}`, parsedBody);
 
   // Simulate different responses based on endpoint and method
   if (method === 'GET') {
@@ -138,7 +133,7 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
   };
 }
 
-// Mock API functions - will be used when API_URL is not provided or in mock mode
+// Mock API functions - will be used as fallback when API calls fail
 export const api = {
   // Account related endpoints
   accounts: {

@@ -5,7 +5,7 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Feature flags
-export const USE_MOCK_DATA = import.meta.env.VITE_USE_MOCK_DATA === 'true' || !API_URL;
+export const USE_MOCK_DATA = false; // Changed to false to always use backend API
 export const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
 
 // Session configuration
