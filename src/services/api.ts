@@ -2,6 +2,7 @@
 
 import { Account } from './AccountService';
 import { Beneficiary } from './BeneficiaryService';
+import { API_URL } from '@/config/api.config';
 
 export interface Transaction {
   id: number;
@@ -17,9 +18,6 @@ export interface Transaction {
   reference_id?: string;
   fees?: number;
 }
-
-// Change this to your Express.js backend URL (e.g., localhost in development, or deployed URL in production)
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Auth token management
 const getAuthToken = () => {
