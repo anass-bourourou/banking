@@ -9,7 +9,7 @@ export interface ApiResponse<T = any> {
 }
 
 // Re-export the Transaction interface from TransactionService
-export { Transaction } from './TransactionService';
+export type { Transaction } from './TransactionService';
 
 // Function to get auth token from localStorage
 const getToken = (): string | null => {

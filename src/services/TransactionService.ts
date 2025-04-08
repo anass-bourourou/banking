@@ -33,6 +33,7 @@ export interface TransferData {
   smsValidationId?: number;
   validationCode?: string;
   recipientName?: string;
+  scheduledDate?: string;
 }
 
 export class TransactionService extends BaseService {
@@ -48,7 +49,6 @@ export class TransactionService extends BaseService {
         if (error) throw error;
         return data || [];
       } else {
-        // Utiliser l'API backend
         const response = await fetchWithAuth(ENDPOINTS.TRANSACTIONS.RECENT);
         const data = await response.json();
 
@@ -77,7 +77,6 @@ export class TransactionService extends BaseService {
         if (error) throw error;
         return data || [];
       } else {
-        // Utiliser l'API backend
         const response = await fetchWithAuth(ENDPOINTS.TRANSACTIONS.BY_ACCOUNT(accountId));
         const data = await response.json();
 
@@ -97,7 +96,6 @@ export class TransactionService extends BaseService {
   static async createTransfer(transferData: TransferData): Promise<Transaction> {
     try {
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
-        // Format data for Supabase
         const transactionData = {
           description: transferData.description || 'Virement',
           amount: transferData.amount,
@@ -126,7 +124,6 @@ export class TransactionService extends BaseService {
 
         return data;
       } else {
-        // Utiliser l'API backend
         const response = await fetchWithAuth(ENDPOINTS.TRANSACTIONS.CREATE, {
           method: 'POST',
           body: JSON.stringify(transferData)
@@ -157,15 +154,12 @@ export class TransactionService extends BaseService {
         const recipientsCount = transferData.recipients?.length || 0;
         const totalAmount = transferData.amount;
         
-        // Implementation for Supabase would go here
-        
         toast.success('Virements multiples effectués avec succès', {
           description: `${recipientsCount} virements pour un total de ${totalAmount.toLocaleString('fr-MA')} MAD`
         });
         
         return { recipientsCount, totalAmount };
       } else {
-        // Utiliser l'API backend
         const response = await fetchWithAuth('/transfers/mass', {
           method: 'POST',
           body: JSON.stringify(transferData)
@@ -195,11 +189,10 @@ export class TransactionService extends BaseService {
   ): Promise<{validationId: number}> {
     try {
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
-        // Generate a validation code that will be valid for 10 minutes
         const validationData = {
-          code: Math.floor(100000 + Math.random() * 900000).toString(), // 6-digit code
+          code: Math.floor(100000 + Math.random() * 900000).toString(),
           createdAt: new Date().toISOString(),
-          expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(),
           isUsed: false,
           operationType: 'transfer',
           transferData: JSON.stringify(transferData)
@@ -214,7 +207,6 @@ export class TransactionService extends BaseService {
         if (error) throw error;
         if (!data) throw new Error('Erreur lors de la création du code de validation');
         
-        // Simulate sending SMS
         console.log(`[DEVELOPMENT] SMS code for transfer: ${validationData.code}`);
         toast.info('Code de validation envoyé', {
           description: 'Un code de validation a été envoyé par SMS'
@@ -222,7 +214,6 @@ export class TransactionService extends BaseService {
 
         return { validationId: data.id };
       } else {
-        // Use backend API
         const response = await fetchWithAuth('/transfers/validate', {
           method: 'POST',
           body: JSON.stringify({ transferData, phoneNumber })

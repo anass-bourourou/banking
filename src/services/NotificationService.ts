@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -85,6 +84,44 @@ export class NotificationService extends BaseService {
       console.error('Error marking all notifications as read:', error);
       toast.error('Impossible de marquer toutes les notifications comme lues');
       throw new Error('Impossible de marquer toutes les notifications comme lues');
+    }
+  }
+  
+  static async addNotification(notification: Omit<Notification, 'id' | 'read' | 'date'>): Promise<Notification> {
+    try {
+      if (NotificationService.useSupabase() && NotificationService.getSupabase()) {
+        const notificationData = {
+          ...notification,
+          read: false,
+          date: new Date().toISOString()
+        };
+
+        const { data, error } = await NotificationService.getSupabase()!
+          .from('notifications')
+          .insert(notificationData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        return data as Notification;
+      } else {
+        // Use the API backend
+        const response = await fetchWithAuth('/notifications', {
+          method: 'POST',
+          body: JSON.stringify({
+            ...notification,
+            read: false,
+            date: new Date().toISOString()
+          })
+        });
+        
+        const data = await response.json();
+        return data as Notification;
+      }
+    } catch (error) {
+      console.error('Error adding notification:', error);
+      toast.error('Impossible d\'ajouter la notification');
+      throw new Error('Impossible d\'ajouter la notification');
     }
   }
 }

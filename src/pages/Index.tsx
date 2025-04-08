@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import AppLayout from '@/components/layout/AppLayout';
@@ -12,7 +11,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AccountService } from '@/services/AccountService';
 import { Loader2 } from 'lucide-react';
 import RecentTransactions from '@/components/accounts/RecentTransactions';
-import { TransactionService } from '@/services/TransactionService';
+import { TransactionService, Transaction } from '@/services/TransactionService';
 
 const Index = () => {
   const { user } = useAuth();
@@ -36,7 +35,6 @@ const Index = () => {
     { name: 'Autres', value: 700, color: '#6B7280' },
   ];
 
-  // Extract first name for greeting
   const firstName = user?.name?.split(' ')[0] || 'Anass';
 
   return (
@@ -82,13 +80,7 @@ const Index = () => {
             <Loader2 className="h-6 w-6 animate-spin text-bank-primary" />
           </div>
         ) : transactions && transactions.length > 0 ? (
-          <RecentTransactions transactions={transactions.slice(0, 5).map(t => ({
-            id: t.id,
-            description: t.description,
-            amount: t.amount,
-            type: t.type,
-            date: t.date
-          }))} />
+          <RecentTransactions transactions={transactions.slice(0, 5)} />
         ) : (
           <div className="rounded-lg border border-bank-gray-light p-6 text-center">
             <p className="text-bank-gray">Aucun mouvement récent</p>
