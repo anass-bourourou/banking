@@ -4,19 +4,18 @@ import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
 
 export interface TransferReceipt {
-  id: number;
-  transfer_id: number;
-  transfer_type: 'standard' | 'multiple' | 'instantané';
-  sender_account_id: number;
-  recipient_details: any;
+  id: string;
+  transactionId: number;
   amount: number;
-  currency: string;
-  motif?: string;
-  fees: number;
-  reference_number: string;
+  recipientName: string;
+  recipientAccount: string;
+  date: string;
+  reference: string;
   status: string;
-  execution_date: string;
-  created_at: string;
+  fromAccount: string;
+  description?: string;
+  fees?: number;
+  pdfUrl?: string;
 }
 
 export class TransferReceiptService extends BaseService {
@@ -26,13 +25,13 @@ export class TransferReceiptService extends BaseService {
         const { data, error } = await TransferReceiptService.getSupabase()!
           .from('transfer_receipts')
           .select('*')
-          .order('created_at', { ascending: false });
+          .order('date', { ascending: false });
 
         if (error) throw error;
         return data || [];
       } else {
-        // Use mock API
-        const response = await fetchWithAuth('/transfer-receipts');
+        // Utiliser l'API backend
+        const response = await fetchWithAuth('/transfers/receipts');
         const data = await response.json();
         
         if (Array.isArray(data)) {
@@ -47,89 +46,56 @@ export class TransferReceiptService extends BaseService {
       throw new Error('Impossible de récupérer les reçus de virement');
     }
   }
-  
-  static async getTransferReceiptById(id: number): Promise<TransferReceipt | null> {
+
+  static async downloadTransferReceipt(receiptId: string): Promise<void> {
     try {
       if (TransferReceiptService.useSupabase() && TransferReceiptService.getSupabase()) {
-        const { data, error } = await TransferReceiptService.getSupabase()!
+        const { data: receipt, error: getError } = await TransferReceiptService.getSupabase()!
           .from('transfer_receipts')
           .select('*')
-          .eq('id', id)
+          .eq('id', receiptId)
           .single();
 
-        if (error) throw error;
-        return data;
-      } else {
-        // Use mock API
-        const response = await fetchWithAuth(`/transfer-receipts/${id}`);
-        const data = await response.json();
-        return data as TransferReceipt;
-      }
-    } catch (error) {
-      console.error(`Error fetching transfer receipt ${id}:`, error);
-      toast.error('Impossible de récupérer le reçu de virement');
-      throw new Error('Impossible de récupérer le reçu de virement');
-    }
-  }
-  
-  static async generateTransferReceipt(
-    transferId: number,
-    transferType: 'standard' | 'multiple' | 'instantané',
-    accountId: number,
-    recipientDetails: any,
-    amount: number,
-    motif?: string,
-    fees: number = 0
-  ): Promise<TransferReceipt> {
-    try {
-      const referenceNumber = `TR-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      
-      if (TransferReceiptService.useSupabase() && TransferReceiptService.getSupabase()) {
-        const { data, error } = await TransferReceiptService.getSupabase()!
+        if (getError) throw getError;
+        if (!receipt || !receipt.pdfUrl) {
+          throw new Error('Le reçu n\'est pas disponible');
+        }
+
+        // Télécharger le fichier
+        const { data, error: downloadError } = await TransferReceiptService.getSupabase()!
+          .storage
           .from('transfer_receipts')
-          .insert({
-            transfer_id: transferId,
-            transfer_type: transferType,
-            sender_account_id: accountId,
-            recipient_details: recipientDetails,
-            amount: amount,
-            currency: 'MAD',
-            motif: motif,
-            fees: fees,
-            reference_number: referenceNumber,
-            status: 'completed',
-            execution_date: new Date().toISOString()
-          })
-          .select()
-          .single();
+          .download(receipt.pdfUrl);
 
-        if (error) throw error;
-        return data;
+        if (downloadError) throw downloadError;
+
+        // Créer un lien pour télécharger le fichier
+        const url = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reçu_virement_${receipt.reference.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       } else {
-        // Mock receipt generation
-        const mockReceipt: TransferReceipt = {
-          id: Math.floor(Math.random() * 10000),
-          transfer_id: transferId,
-          transfer_type: transferType,
-          sender_account_id: accountId,
-          recipient_details: recipientDetails,
-          amount: amount,
-          currency: 'MAD',
-          motif: motif,
-          fees: fees,
-          reference_number: referenceNumber,
-          status: 'completed',
-          execution_date: new Date().toISOString(),
-          created_at: new Date().toISOString()
-        };
+        // Utiliser l'API backend
+        const response = await fetchWithAuth(`/transfers/receipts/${receiptId}/download`, {
+          method: 'GET'
+        });
         
-        return mockReceipt;
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reçu_virement_${receiptId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       }
     } catch (error) {
-      console.error('Error generating transfer receipt:', error);
-      // Ne pas bloquer le processus de virement si la génération du reçu échoue
-      console.log('Failed to generate receipt but continuing transfer flow');
-      throw new Error('Impossible de générer le reçu de virement');
+      console.error(`Error downloading transfer receipt ${receiptId}:`, error);
+      toast.error('Impossible de télécharger le reçu');
+      throw new Error('Impossible de télécharger le reçu');
     }
   }
 }

@@ -5,123 +5,125 @@ import { toast } from 'sonner';
 
 export interface SmsValidation {
   id: number;
-  phone_number: string;
-  verification_code: string;
-  transaction_type: string;
-  transaction_details: any;
-  is_verified: boolean;
-  created_at: string;
-  expires_at: string;
+  code: string;
+  createdAt: string;
+  expiresAt: string;
+  isUsed: boolean;
+  operationType: 'transfer' | 'bill-payment' | 'settings-change';
 }
 
 export class SmsValidationService extends BaseService {
-  static async requestSmsValidation(
-    transactionType: string, 
-    transactionDetails: any, 
-    phoneNumber: string
-  ): Promise<{ validationId: number }> {
+  static async requestSmsCode(operationType: 'transfer' | 'bill-payment' | 'settings-change'): Promise<number> {
     try {
       if (SmsValidationService.useSupabase() && SmsValidationService.getSupabase()) {
-        // Génération d'un code à 6 chiffres
-        const verificationCode = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        // Calcul de la date d'expiration (10 minutes à partir de maintenant)
-        const expiresAt = new Date();
-        expiresAt.setMinutes(expiresAt.getMinutes() + 10);
-        
+        // Generate a validation code that will be valid for 10 minutes
+        const validationData = {
+          code: Math.floor(100000 + Math.random() * 900000).toString(), // 6-digit code
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
+          isUsed: false,
+          operationType
+        };
+
         const { data, error } = await SmsValidationService.getSupabase()!
           .from('sms_validations')
-          .insert({
-            phone_number: phoneNumber,
-            verification_code: verificationCode,
-            transaction_type: transactionType,
-            transaction_details: transactionDetails,
-            expires_at: expiresAt.toISOString(),
-            is_verified: false
-          })
+          .insert(validationData)
           .select()
           .single();
 
         if (error) throw error;
-        
-        // Dans un environnement réel, on appellerait ici un service SMS pour envoyer le code
-        console.log(`Code SMS envoyé au ${phoneNumber}: ${verificationCode}`);
-        
-        // Pour la démo, on affiche le code dans un toast
-        toast.info(`Code de validation: ${verificationCode}`, {
-          description: "Dans un environnement réel, ce code serait envoyé par SMS."
+        if (!data) throw new Error('Erreur lors de la création du code de validation');
+
+        // Simulate sending SMS
+        console.log(`[DEVELOPMENT] SMS code for ${operationType}: ${validationData.code}`);
+        toast.info('Code de validation envoyé', {
+          description: 'Un code de validation a été envoyé par SMS à votre numéro de téléphone'
         });
-        
-        return { validationId: data.id };
+
+        return data.id;
       } else {
-        // Mock SMS validation
-        const mockResponse = { validationId: Math.floor(Math.random() * 10000) };
-        const mockCode = Math.floor(100000 + Math.random() * 900000).toString();
-        
-        toast.info(`Code de validation: ${mockCode}`, {
-          description: "Dans un environnement réel, ce code serait envoyé par SMS."
+        // Use backend API
+        const response = await fetchWithAuth('/auth/request-sms', {
+          method: 'POST',
+          body: JSON.stringify({ operationType })
         });
+        const data = await response.json();
         
-        return mockResponse;
+        if (data && data.validationId) {
+          toast.info('Code de validation envoyé', {
+            description: 'Un code de validation a été envoyé par SMS à votre numéro de téléphone'
+          });
+          
+          // For development, log the code
+          console.log(`[DEVELOPMENT] SMS validation ID: ${data.validationId}, Code: ${data.code || '123456'}`);
+          
+          return data.validationId;
+        }
+        
+        throw new Error('Erreur lors de la demande de code SMS');
       }
     } catch (error) {
-      console.error('Error requesting SMS validation:', error);
-      toast.error('Impossible de demander la validation par SMS');
-      throw new Error('Impossible de demander la validation par SMS');
+      console.error('Error requesting SMS code:', error);
+      toast.error('Erreur d\'envoi du SMS');
+      throw error;
     }
   }
-  
+
   static async verifySmsCode(validationId: number, code: string): Promise<boolean> {
     try {
       if (SmsValidationService.useSupabase() && SmsValidationService.getSupabase()) {
-        // Vérifier si le code est valide et non expiré
+        // Get the validation entry
         const { data: validation, error: fetchError } = await SmsValidationService.getSupabase()!
           .from('sms_validations')
           .select('*')
           .eq('id', validationId)
           .single();
-          
+
         if (fetchError) throw fetchError;
-        
-        if (!validation) {
-          throw new Error('Validation non trouvée');
+        if (!validation) throw new Error('Code de validation non trouvé');
+
+        // Check if code is valid
+        if (validation.isUsed) {
+          throw new Error('Ce code a déjà été utilisé');
         }
-        
-        // Vérifier si le code a expiré
-        if (new Date() > new Date(validation.expires_at)) {
-          throw new Error('Le code a expiré');
+
+        if (new Date(validation.expiresAt) < new Date()) {
+          throw new Error('Ce code a expiré');
         }
-        
-        // Vérifier le code
-        if (validation.verification_code !== code) {
-          throw new Error('Code invalide');
+
+        if (validation.code !== code) {
+          throw new Error('Code de validation incorrect');
         }
-        
-        // Marquer comme vérifié
+
+        // Mark code as used
         const { error: updateError } = await SmsValidationService.getSupabase()!
           .from('sms_validations')
-          .update({ 
-            is_verified: true,
-            verified_at: new Date().toISOString()
-          })
+          .update({ isUsed: true })
           .eq('id', validationId);
-          
+
         if (updateError) throw updateError;
-        
+
         return true;
       } else {
-        // Mock verification (accepte n'importe quel code pour la démo)
-        return true;
+        // Use backend API
+        const response = await fetchWithAuth('/auth/verify-sms', {
+          method: 'POST',
+          body: JSON.stringify({ validationId, code })
+        });
+        
+        const data = await response.json();
+        
+        if (data && data.success === true) {
+          return true;
+        }
+        
+        throw new Error(data.message || 'Code de validation incorrect');
       }
     } catch (error) {
       console.error('Error verifying SMS code:', error);
-      
-      if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('Impossible de vérifier le code SMS');
-      }
-      
+      toast.error('Validation échouée', {
+        description: error instanceof Error ? error.message : 'Code de validation incorrect'
+      });
       return false;
     }
   }

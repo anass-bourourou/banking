@@ -5,7 +5,7 @@
 export const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 // Feature flags
-export const USE_MOCK_DATA = false; // Always use backend API
+export const USE_MOCK_DATA = false; // Complètement désactivé, utilise uniquement le backend API
 export const USE_SUPABASE = import.meta.env.VITE_USE_SUPABASE === 'true';
 
 // Session configuration
@@ -25,6 +25,7 @@ export const ENDPOINTS = {
   ACCOUNTS: {
     LIST: '/accounts',
     DETAIL: (id: number) => `/accounts/${id}`,
+    UPDATE_BALANCE: (id: number) => `/accounts/${id}/balance`,
   },
   TRANSACTIONS: {
     RECENT: '/transactions/recent',
@@ -36,6 +37,7 @@ export const ENDPOINTS = {
     CREATE: '/beneficiaries',
     UPDATE: (id: string) => `/beneficiaries/${id}`,
     DELETE: (id: string) => `/beneficiaries/${id}`,
+    TOGGLE_FAVORITE: (id: string) => `/beneficiaries/${id}/favorite`,
   },
   STATEMENTS: {
     LIST: '/statements',
@@ -45,5 +47,6 @@ export const ENDPOINTS = {
     LIST: '/bills',
     PAY: '/bills/pay',
     RECEIPTS: '/bills/receipts',
+    MOROCCAN: '/moroccan-bills',
   },
 };

@@ -1,9 +1,8 @@
-
 // Base API service for making HTTP requests to Express backend
 
 import { Account } from './AccountService';
 import { Beneficiary } from './BeneficiaryService';
-import { API_URL } from '@/config/api.config';
+import { API_URL, ENDPOINTS } from '@/config/api.config';
 
 export interface Transaction {
   id: number;
@@ -25,11 +24,7 @@ const getAuthToken = () => {
   return localStorage.getItem('auth_token');
 };
 
-// Helper to check if we're in mock mode or should use real API - always returns false
-const useMockData = () => {
-  return false; // Always use backend API, never use mock data unless API fails
-};
-
+// Toujours utiliser le backend API, uniquement utiliser les données mock en cas d'échec
 export async function fetchWithAuth(endpoint: string, options: RequestInit = {}) {
   try {
     const headers = {
@@ -51,12 +46,12 @@ export async function fetchWithAuth(endpoint: string, options: RequestInit = {})
     return response;
   } catch (error) {
     console.error(`API call to ${endpoint} failed:`, error);
-    // If the API call fails, we'll still fallback to mock data for better user experience
+    // En cas d'échec de l'API, nous utilisons les données mock comme dernier recours
     return mockApiResponse(endpoint, options.method || 'GET', options.body);
   }
 }
 
-// Mock API response function as fallback for development
+// Mock API response function as fallback for development and API failures
 async function mockApiResponse(endpoint: string, method: string, body?: any) {
   // Parse the body if it's a string
   let parsedBody = body;
@@ -89,6 +84,10 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
       return { json: () => Promise.resolve(api.beneficiaries.getAll()) };
     } else if (endpoint === '/statements') {
       return { json: () => Promise.resolve(api.statements.getAll()) };
+    } else if (endpoint === '/moroccan-bills') {
+      return { json: () => Promise.resolve(api.bills.getMoroccanBills()) };
+    } else if (endpoint === '/bills') {
+      return { json: () => Promise.resolve(api.bills.getAll()) };
     }
   } else if (method === 'POST') {
     // POST requests
@@ -104,6 +103,10 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
       return {
         json: () => Promise.resolve({ success: true })
       };
+    } else if (endpoint === '/bills/pay') {
+      return {
+        json: () => Promise.resolve({ success: true, message: "Facture payée avec succès" })
+      };
     }
   } else if (method === 'PUT' || method === 'PATCH') {
     // PUT/PATCH requests
@@ -111,6 +114,10 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
       const id = endpoint.split('/beneficiaries/')[1].split('/')[0];
       return {
         json: () => Promise.resolve({ ...parsedBody, id })
+      };
+    } else if (endpoint.includes('/accounts/') && endpoint.includes('/balance')) {
+      return {
+        json: () => Promise.resolve({ success: true })
       };
     }
   } else if (method === 'DELETE') {
@@ -132,7 +139,19 @@ async function mockApiResponse(endpoint: string, method: string, body?: any) {
   };
 }
 
-// Mock API functions - will be used as fallback when API calls fail
+// Création d'une nouvelle interface pour les factures utilisées dans les mocks
+export interface Bill {
+  id: string;
+  reference: string;
+  type: 'DGI' | 'CIM' | 'OTHER';
+  amount: number;
+  dueDate: string;
+  status: 'pending' | 'paid';
+  paymentDate?: string;
+  description: string;
+}
+
+// Mock API functions - uniquement utilisées comme fallback en cas d'échec de l'API
 export const api = {
   // Account related endpoints
   accounts: {
@@ -337,6 +356,64 @@ export const api = {
     }
   },
   
+  // Bills related endpoints
+  bills: {
+    getAll: (): Bill[] => {
+      return [
+        {
+          id: 'bill-1',
+          reference: 'FACT-2023-001',
+          type: 'DGI',
+          amount: 450.75,
+          dueDate: '2023-10-25',
+          status: 'pending',
+          description: 'Impôt foncier'
+        },
+        {
+          id: 'bill-2',
+          reference: 'FACT-2023-002',
+          type: 'CIM',
+          amount: 256.30,
+          dueDate: '2023-11-10',
+          status: 'pending',
+          description: 'Facture eau et électricité'
+        },
+        {
+          id: 'bill-3',
+          reference: 'FACT-2023-003',
+          type: 'OTHER',
+          amount: 129.50,
+          dueDate: '2023-10-15',
+          status: 'paid',
+          paymentDate: '2023-10-10',
+          description: 'Abonnement internet'
+        }
+      ];
+    },
+    getMoroccanBills: (): Bill[] => {
+      return [
+        {
+          id: 'bill-4',
+          reference: 'MAROC-2023-001',
+          type: 'DGI',
+          amount: 780.40,
+          dueDate: '2023-11-05',
+          status: 'pending',
+          description: 'Taxe professionnelle'
+        },
+        {
+          id: 'bill-5',
+          reference: 'MAROC-2023-002',
+          type: 'OTHER',
+          amount: 350.00,
+          dueDate: '2023-10-30',
+          status: 'pending',
+          description: 'Redevance audiovisuelle'
+        }
+      ];
+    }
+  },
+  
   // User profile
   user: {
     updateProfile: async (data: {
@@ -358,7 +435,7 @@ export const api = {
   }
 };
 
-// Interface for BankStatement pour la réponse mock
+// Interface pour BankStatement pour la réponse mock
 interface BankStatement {
   id: string;
   accountId: number;

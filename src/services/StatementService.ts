@@ -2,7 +2,7 @@
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
-import { Account } from './AccountService';
+import { ENDPOINTS } from '@/config/api.config';
 
 export interface BankStatement {
   id: string;
@@ -19,46 +19,19 @@ export class StatementService extends BaseService {
   static async getStatements(): Promise<BankStatement[]> {
     try {
       if (StatementService.useSupabase() && StatementService.getSupabase()) {
-        // Fetch statements with account info
         const { data, error } = await StatementService.getSupabase()!
           .from('statements')
-          .select(`
-            id, 
-            account_id,
-            period,
-            date,
-            file_path,
-            status,
-            download_count,
-            accounts (name)
-          `)
+          .select('*')
           .order('date', { ascending: false });
 
         if (error) throw error;
-        
-        if (!data || data.length === 0) {
-          return [];
-        }
-
-        // Transform data to match our BankStatement interface
-        const statements: BankStatement[] = data.map(item => ({
-          id: item.id,
-          accountId: item.account_id,
-          accountName: item.accounts?.[0]?.name || 'Unknown Account',
-          period: item.period,
-          date: item.date,
-          fileUrl: item.file_path,
-          status: item.status,
-          downloadCount: item.download_count
-        }));
-
-        return statements;
+        return data || [];
       } else {
-        // Use mock API
-        const response = await fetchWithAuth('/statements');
+        // Utiliser l'API backend
+        const response = await fetchWithAuth(ENDPOINTS.STATEMENTS.LIST);
         const data = await response.json();
         
-        if (Array.isArray(data) && data.length > 0 && 'period' in data[0]) {
+        if (Array.isArray(data)) {
           return data as BankStatement[];
         }
         
@@ -66,109 +39,64 @@ export class StatementService extends BaseService {
       }
     } catch (error) {
       console.error('Error fetching statements:', error);
-      toast.error('Impossible de récupérer les relevés bancaires');
-      throw new Error('Impossible de récupérer les relevés bancaires');
+      toast.error('Impossible de récupérer les relevés');
+      throw new Error('Impossible de récupérer les relevés');
     }
   }
 
-  static async getStatementById(id: string): Promise<BankStatement | null> {
+  static async downloadStatement(statementId: string): Promise<void> {
     try {
       if (StatementService.useSupabase() && StatementService.getSupabase()) {
-        const { data, error } = await StatementService.getSupabase()!
-          .from('statements')
-          .select(`
-            id, 
-            account_id,
-            period,
-            date,
-            file_path,
-            status,
-            download_count,
-            accounts (name)
-          `)
-          .eq('id', id)
-          .single();
-
-        if (error) throw error;
-        
-        if (!data) {
-          return null;
-        }
-
-        return {
-          id: data.id,
-          accountId: data.account_id,
-          accountName: data.accounts?.[0]?.name || 'Unknown Account',
-          period: data.period,
-          date: data.date,
-          fileUrl: data.file_path,
-          status: data.status,
-          downloadCount: data.download_count
-        };
-      } else {
-        // Use mock API
-        const response = await fetchWithAuth(`/statements/${id}`);
-        const data = await response.json();
-        
-        if (data && 'id' in data && 'period' in data) {
-          return data as BankStatement;
-        }
-        
-        return null;
-      }
-    } catch (error) {
-      console.error(`Error fetching statement ${id}:`, error);
-      toast.error('Impossible de récupérer le relevé bancaire');
-      throw new Error('Impossible de récupérer le relevé bancaire');
-    }
-  }
-
-  static async downloadStatement(id: string): Promise<void> {
-    try {
-      if (StatementService.useSupabase() && StatementService.getSupabase()) {
-        // First, get the statement to check if it exists and get fileUrl
         const { data: statement, error: getError } = await StatementService.getSupabase()!
           .from('statements')
-          .select('id, file_path, download_count')
-          .eq('id', id)
+          .select('*')
+          .eq('id', statementId)
           .single();
 
         if (getError) throw getError;
-        if (!statement) throw new Error('Relevé non trouvé');
-        if (!statement.file_path) throw new Error('Aucun fichier disponible pour ce relevé');
+        if (!statement || !statement.fileUrl) {
+          throw new Error('Le fichier n\'est pas disponible');
+        }
 
-        // Update download count
-        const { error: updateError } = await StatementService.getSupabase()!
+        // Télécharger le fichier
+        const { data, error: downloadError } = await StatementService.getSupabase()!
+          .storage
           .from('statements')
-          .update({ download_count: (statement.download_count || 0) + 1 })
-          .eq('id', id);
+          .download(statement.fileUrl);
 
-        if (updateError) throw updateError;
+        if (downloadError) throw downloadError;
 
-        // In a real app, we would get the file URL from storage
-        // and initiate the download, but for demo purposes, we'll simulate it
-        console.log(`Downloading statement ${id} from ${statement.file_path}`);
+        // Créer un lien pour télécharger le fichier
+        const url = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relevé_${statement.period.replace(/ /g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
         
-        // Simulate file download - in a real app, this would be:
-        // window.open(statement.file_path, '_blank');
-        // or
-        // const { data: fileData, error: downloadError } = await StatementService.getSupabase()!
-        //  .storage.from('statements').download(statement.file_path);
-        toast.success('Téléchargement démarré', { 
-          description: `Le relevé est en cours de téléchargement` 
-        });
+        // Mettre à jour le compteur de téléchargements
+        await StatementService.getSupabase()!
+          .from('statements')
+          .update({ downloadCount: statement.downloadCount + 1 })
+          .eq('id', statementId);
       } else {
-        // Mock API
-        await fetchWithAuth(`/statements/${id}/download`, {
-          method: 'POST'
+        // Utiliser l'API backend
+        const response = await fetchWithAuth(ENDPOINTS.STATEMENTS.DOWNLOAD(statementId), {
+          method: 'GET'
         });
         
-        toast.success('Téléchargement démarré', { 
-          description: `Le relevé est en cours de téléchargement` 
-        });
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `relevé_${statementId}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       }
     } catch (error) {
-      console.error('Error downloading statement:', error);
+      console.error(`Error downloading statement ${statementId}:`, error);
       toast.error('Impossible de télécharger le relevé');
       throw new Error('Impossible de télécharger le relevé');
     }

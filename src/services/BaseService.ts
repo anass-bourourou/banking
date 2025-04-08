@@ -7,9 +7,9 @@ export abstract class BaseService {
     return isSupabaseConfigured();
   }
 
-  // Helper to check if we should fallback to mock data - always returns false now
+  // Helper to check if we should fallback to mock data - always returns false
   protected static useMockData(): boolean {
-    return false; // Never use mock data, always use backend API
+    return false; // Ne jamais utiliser les données mock, toujours essayer d'utiliser le backend API
   }
 
   protected static getSupabase() {
