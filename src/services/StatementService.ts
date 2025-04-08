@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -27,7 +26,6 @@ export class StatementService extends BaseService {
         if (error) throw error;
         return data || [];
       } else {
-        // Utiliser l'API backend
         const response = await fetchWithAuth(ENDPOINTS.STATEMENTS.LIST);
         const data = await response.json();
         
@@ -58,7 +56,6 @@ export class StatementService extends BaseService {
           throw new Error('Le fichier n\'est pas disponible');
         }
 
-        // Télécharger le fichier
         const { data, error: downloadError } = await StatementService.getSupabase()!
           .storage
           .from('statements')
@@ -66,7 +63,6 @@ export class StatementService extends BaseService {
 
         if (downloadError) throw downloadError;
 
-        // Créer un lien pour télécharger le fichier
         const url = URL.createObjectURL(data);
         const a = document.createElement('a');
         a.href = url;
@@ -75,16 +71,18 @@ export class StatementService extends BaseService {
         a.click();
         document.body.removeChild(a);
         
-        // Mettre à jour le compteur de téléchargements
         await StatementService.getSupabase()!
           .from('statements')
           .update({ downloadCount: statement.downloadCount + 1 })
           .eq('id', statementId);
       } else {
-        // Utiliser l'API backend
         const response = await fetchWithAuth(ENDPOINTS.STATEMENTS.DOWNLOAD(statementId), {
           method: 'GET'
         });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);

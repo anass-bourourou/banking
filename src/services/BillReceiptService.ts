@@ -1,8 +1,8 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
 import { Account } from './AccountService';
+import { Bill } from './BillService';
 
 export interface BillReceipt {
   id: string;
@@ -27,7 +27,6 @@ export class BillReceiptService extends BaseService {
         if (error) throw error;
         return data || [];
       } else {
-        // Utiliser l'API backend
         const response = await fetchWithAuth('/bills/receipts');
         const data = await response.json();
         
@@ -58,7 +57,6 @@ export class BillReceiptService extends BaseService {
           throw new Error('Le reçu n\'est pas disponible');
         }
 
-        // Télécharger le fichier
         const { data, error: downloadError } = await BillReceiptService.getSupabase()!
           .storage
           .from('receipts')
@@ -66,7 +64,6 @@ export class BillReceiptService extends BaseService {
 
         if (downloadError) throw downloadError;
 
-        // Créer un lien pour télécharger le fichier
         const url = URL.createObjectURL(data);
         const a = document.createElement('a');
         a.href = url;
@@ -75,7 +72,6 @@ export class BillReceiptService extends BaseService {
         a.click();
         document.body.removeChild(a);
       } else {
-        // Utiliser l'API backend
         const response = await fetchWithAuth(`/bills/receipts/${receiptId}/download`, {
           method: 'GET'
         });
@@ -91,6 +87,59 @@ export class BillReceiptService extends BaseService {
       }
     } catch (error) {
       console.error(`Error downloading bill receipt ${receiptId}:`, error);
+      toast.error('Impossible de télécharger le reçu');
+      throw new Error('Impossible de télécharger le reçu');
+    }
+  }
+
+  static async downloadReceipt(bill: Bill): Promise<void> {
+    try {
+      if (BillReceiptService.useSupabase() && BillReceiptService.getSupabase()) {
+        const { data: receipt, error: getError } = await BillReceiptService.getSupabase()!
+          .from('bill_receipts')
+          .select('*')
+          .eq('billId', bill.id)
+          .single();
+
+        if (getError) throw getError;
+        if (!receipt || !receipt.pdfUrl) {
+          throw new Error('Le reçu n\'est pas disponible');
+        }
+
+        const { data, error: downloadError } = await BillReceiptService.getSupabase()!
+          .storage
+          .from('receipts')
+          .download(receipt.pdfUrl);
+
+        if (downloadError) throw downloadError;
+
+        const url = URL.createObjectURL(data);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reçu_${bill.reference.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      } else {
+        const response = await fetchWithAuth(`/bills/receipts/bill/${bill.id}/download`, {
+          method: 'GET'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `reçu_${bill.reference.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+    } catch (error) {
+      console.error(`Error downloading bill receipt for bill ${bill.id}:`, error);
       toast.error('Impossible de télécharger le reçu');
       throw new Error('Impossible de télécharger le reçu');
     }
@@ -114,7 +163,6 @@ export class BillReceiptService extends BaseService {
           pdfUrl: null
         };
 
-        // Créer l'entrée de reçu
         const { error } = await BillReceiptService.getSupabase()!
           .from('bill_receipts')
           .insert(receiptData);
@@ -125,7 +173,6 @@ export class BillReceiptService extends BaseService {
           description: `Le reçu pour le paiement des vignettes a été généré avec succès`
         });
       } else {
-        // Utiliser l'API backend
         await fetchWithAuth('/bills/receipts/vignette', {
           method: 'POST',
           body: JSON.stringify({

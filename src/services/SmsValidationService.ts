@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -125,6 +124,63 @@ export class SmsValidationService extends BaseService {
         description: error instanceof Error ? error.message : 'Code de validation incorrect'
       });
       return false;
+    }
+  }
+  
+  static async requestSmsValidation(
+    operationType: 'transfer' | 'bill-payment' | 'paiement_facture' | 'paiement_vignette',
+    data: any,
+    phoneNumber: string
+  ): Promise<{validationId: number}> {
+    try {
+      if (SmsValidationService.useSupabase() && SmsValidationService.getSupabase()) {
+        // Generate a validation code that will be valid for 10 minutes
+        const validationData = {
+          code: Math.floor(100000 + Math.random() * 900000).toString(), // 6-digit code
+          createdAt: new Date().toISOString(),
+          expiresAt: new Date(Date.now() + 10 * 60 * 1000).toISOString(), // 10 minutes
+          isUsed: false,
+          operationType,
+          operationData: JSON.stringify(data)
+        };
+
+        const { data: validationRecord, error } = await SmsValidationService.getSupabase()!
+          .from('sms_validations')
+          .insert(validationData)
+          .select()
+          .single();
+
+        if (error) throw error;
+        if (!validationRecord) throw new Error('Erreur lors de la création du code de validation');
+
+        // Simulate sending SMS
+        console.log(`[DEVELOPMENT] SMS code for ${operationType}: ${validationData.code}`);
+        toast.info('Code de validation envoyé', {
+          description: 'Un code de validation a été envoyé par SMS'
+        });
+
+        return { validationId: validationRecord.id };
+      } else {
+        // Use backend API
+        const response = await fetchWithAuth('/auth/request-sms-validation', {
+          method: 'POST',
+          body: JSON.stringify({ operationType, data, phoneNumber })
+        });
+        const responseData = await response.json();
+        
+        if (responseData && responseData.validationId) {
+          toast.info('Code de validation envoyé', {
+            description: 'Un code de validation a été envoyé par SMS'
+          });
+          return { validationId: responseData.validationId };
+        }
+        
+        throw new Error('Erreur lors de la demande de code SMS');
+      }
+    } catch (error) {
+      console.error('Error requesting SMS validation:', error);
+      toast.error('Erreur d\'envoi du SMS');
+      throw error;
     }
   }
 }

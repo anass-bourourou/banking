@@ -83,6 +83,10 @@ export class TransferReceiptService extends BaseService {
           method: 'GET'
         });
         
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
         const blob = await response.blob();
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');

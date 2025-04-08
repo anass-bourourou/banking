@@ -4,7 +4,7 @@ import { Bell, CheckCheck, ChevronRight, Clock, Info, XCircle } from 'lucide-rea
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Notification, DataService } from '@/services/DataService';
+import { Notification, NotificationService } from '@/services/NotificationService';
 import { useQuery } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
@@ -19,7 +19,7 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ className }) =>
   // Fetch notifications
   const { data: fetchedNotifications, isLoading, error } = useQuery({
     queryKey: ['notifications'],
-    queryFn: DataService.getNotifications,
+    queryFn: NotificationService.getNotifications,
   });
   
   // Update the state when notifications are fetched
@@ -50,7 +50,7 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ className }) =>
         return <Info className="h-5 w-5 text-blue-500" />;
       case 'warning':
         return <Clock className="h-5 w-5 text-amber-500" />;
-      case 'alert':
+      case 'error':
         return <XCircle className="h-5 w-5 text-red-500" />;
       default:
         return <Info className="h-5 w-5 text-blue-500" />;
@@ -102,7 +102,7 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ className }) =>
                   <div
                     key={notification.id}
                     className={`relative flex items-start space-x-3 rounded-md p-3 ${
-                      notification.type === 'alert' ? 'bg-red-50' : notification.read ? 'bg-gray-50' : 'bg-blue-50'
+                      notification.type === 'error' ? 'bg-red-50' : notification.read ? 'bg-gray-50' : 'bg-blue-50'
                     }`}
                   >
                     <div className={`flex-shrink-0 ${!notification.read ? 'mt-0.5' : ''}`}>
