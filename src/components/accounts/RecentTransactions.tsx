@@ -2,14 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
-
-interface Transaction {
-  id: number;
-  description: string;
-  amount: number;
-  type: 'credit' | 'debit';
-  date: string;
-}
+import { type Transaction } from '@/services/TransactionService';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];

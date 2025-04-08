@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import AppLayout from '@/components/layout/AppLayout';
@@ -11,7 +12,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { AccountService } from '@/services/AccountService';
 import { Loader2 } from 'lucide-react';
 import RecentTransactions from '@/components/accounts/RecentTransactions';
-import { TransactionService, Transaction } from '@/services/TransactionService';
+import { TransactionService, type Transaction } from '@/services/TransactionService';
 
 const Index = () => {
   const { user } = useAuth();

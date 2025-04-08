@@ -1,30 +1,24 @@
 
 // Import necessary types from the service files
 import type { Account } from './AccountService';
-import type { Transaction, TransferData } from './TransactionService';
 import type { Beneficiary } from './BeneficiaryService';
 import type { Notification } from './NotificationService';
-
-// Re-export all domain-specific services
-export * from './AccountService';
-export * from './TransactionService';
-export * from './BeneficiaryService';
-export * from './NotificationService';
-
-// Re-export specific types for backward compatibility
-export type {
-  Account,
-  Transaction,
-  Beneficiary,
-  TransferData,
-  Notification
-}
-
-// Export a namespace for backward compatibility
 import { AccountService } from './AccountService';
 import { TransactionService } from './TransactionService';
 import { BeneficiaryService } from './BeneficiaryService';
 import { NotificationService } from './NotificationService';
+
+// Re-export correct types
+export type { Transaction, TransferData } from './TransactionService';
+export type { Account } from './AccountService';
+export type { Beneficiary } from './BeneficiaryService';
+export type { Notification } from './NotificationService';
+
+// Re-export all domain-specific services
+export { AccountService } from './AccountService';
+export { TransactionService } from './TransactionService';
+export { BeneficiaryService } from './BeneficiaryService';
+export { NotificationService } from './NotificationService';
 
 // DataService class for backward compatibility
 export class DataService {

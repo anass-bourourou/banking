@@ -8,7 +8,7 @@ export interface ApiResponse<T = any> {
   success: boolean;
 }
 
-// Re-export the Transaction interface from TransactionService
+// Using export type to avoid circular dependency issues
 export type { Transaction } from './TransactionService';
 
 // Function to get auth token from localStorage
