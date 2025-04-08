@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Transaction } from '@/services/TransactionService';
+import { Transaction } from '@/types/transaction';
 import TransactionItem from './TransactionItem';
 
 interface TransactionsListProps {

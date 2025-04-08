@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Account } from '@/services/AccountService';
-import { Transaction } from '@/services/TransactionService';
+import { Transaction } from '@/types/transaction';
 import { Card } from "@/components/ui/card";
 import AccountBalanceChart from './AccountBalanceChart';
 import AccountBalanceInfo from './AccountBalanceInfo';

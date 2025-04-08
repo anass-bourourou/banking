@@ -9,7 +9,7 @@ export interface ApiResponse<T = any> {
 }
 
 // Using export type to avoid circular dependency issues
-export type { Transaction } from './TransactionService';
+export type { Transaction } from '@/types/transaction';
 
 // Function to get auth token from localStorage
 const getToken = (): string | null => {

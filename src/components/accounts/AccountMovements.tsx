@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Transaction } from '@/services/TransactionService';
+import { Transaction } from '@/types/transaction';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import TransactionsFilter from './TransactionsFilter';
 import TransactionsList from './TransactionsList';

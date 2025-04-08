@@ -5,11 +5,13 @@ import type { Beneficiary } from './BeneficiaryService';
 import type { Notification } from './NotificationService';
 import { AccountService } from './AccountService';
 import { TransactionService } from './TransactionService';
+import { TransferService } from './TransferService';
 import { BeneficiaryService } from './BeneficiaryService';
 import { NotificationService } from './NotificationService';
 
 // Re-export correct types
-export type { Transaction, TransferData } from './TransactionService';
+export type { Transaction } from '@/types/transaction';
+export type { TransferData } from '@/types/transaction';
 export type { Account } from './AccountService';
 export type { Beneficiary } from './BeneficiaryService';
 export type { Notification } from './NotificationService';
@@ -17,6 +19,7 @@ export type { Notification } from './NotificationService';
 // Re-export all domain-specific services
 export { AccountService } from './AccountService';
 export { TransactionService } from './TransactionService';
+export { TransferService } from './TransferService';
 export { BeneficiaryService } from './BeneficiaryService';
 export { NotificationService } from './NotificationService';
 
@@ -26,7 +29,7 @@ export class DataService {
   static getAccountById = AccountService.getAccountById;
   static getRecentTransactions = TransactionService.getRecentTransactions;
   static getTransactionsByAccount = TransactionService.getTransactionsByAccountId;
-  static createTransfer = TransactionService.createTransfer;
+  static createTransfer = TransferService.createTransfer;
   static getBeneficiaries = BeneficiaryService.getBeneficiaries;
   static addBeneficiary = BeneficiaryService.addBeneficiary;
   static getNotifications = NotificationService.getNotifications;

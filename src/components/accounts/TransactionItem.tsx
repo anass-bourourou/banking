@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ArrowUp, ArrowDown } from 'lucide-react';
-import { Transaction } from '@/services/TransactionService';
+import { Transaction } from '@/types/transaction';
 
 interface TransactionItemProps {
   transaction: Transaction;

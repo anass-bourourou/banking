@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { ENDPOINTS } from '@/config/api.config';
 import { Transaction } from '@/types/transaction';
 
+export type { Transaction } from '@/types/transaction';
+
 export class TransactionService extends BaseService {
   static async getRecentTransactions(): Promise<Transaction[]> {
     try {

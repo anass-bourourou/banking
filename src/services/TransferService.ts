@@ -4,6 +4,8 @@ import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
 import { Transaction, TransferData } from '@/types/transaction';
 
+export type { TransferData } from '@/types/transaction';
+
 export class TransferService extends BaseService {
   static async createTransfer(transferData: TransferData): Promise<Transaction> {
     try {

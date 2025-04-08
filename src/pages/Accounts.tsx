@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AccountCard from '@/components/accounts/AccountCard';
 import RecentTransactions from '@/components/accounts/RecentTransactions';
 import CardDisplay from '@/components/accounts/CardDisplay';
-import { Transaction } from '@/services/TransactionService';
+import { Transaction } from '@/types/transaction';
 
 const Accounts = () => {
   const accounts = [

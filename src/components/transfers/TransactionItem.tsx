@@ -3,9 +3,10 @@ import React from 'react';
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
 import { format, isToday, isYesterday, parseISO } from 'date-fns';
 import { fr } from 'date-fns/locale';
+import { Transaction } from '@/types/transaction';
 
 interface TransactionItemProps {
-  transaction: any;
+  transaction: Transaction;
   detailed?: boolean;
   onClick?: () => void;
 }

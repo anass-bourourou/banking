@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ArrowDownRight, ArrowUpRight } from 'lucide-react';
-import { type Transaction } from '@/services/TransactionService';
+import { Transaction } from '@/types/transaction';
 
 interface RecentTransactionsProps {
   transactions: Transaction[];
