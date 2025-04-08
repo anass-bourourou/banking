@@ -8,9 +8,10 @@ import { CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 interface AccountBalanceInfoProps {
   account: Account;
+  setActiveTab: (tab: string) => void;
 }
 
-const AccountBalanceInfo: React.FC<AccountBalanceInfoProps> = ({ account }) => {
+const AccountBalanceInfo: React.FC<AccountBalanceInfoProps> = ({ account, setActiveTab }) => {
   const navigate = useNavigate();
   
   // Calcul de l'évolution du solde sur le dernier mois

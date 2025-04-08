@@ -1,7 +1,9 @@
 
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
-import { TransactionService, TransferData } from '@/services/TransactionService';
+import { TransferData } from '@/types/transaction';
+import { TransferService } from '@/services/TransferService';
+import { ValidationService } from '@/services/ValidationService';
 import { toast } from 'sonner';
 
 interface UseTransferOptions {
@@ -18,7 +20,7 @@ export function useTransfer(options: UseTransferOptions = {}) {
   // Transfer mutation
   const transferMutation = useMutation({
     mutationFn: (transferData: TransferData) => {
-      return TransactionService.createTransfer(transferData);
+      return TransferService.createTransfer(transferData);
     },
     onSuccess: () => {
       toast.success('Virement effectué avec succès', {
@@ -47,7 +49,7 @@ export function useTransfer(options: UseTransferOptions = {}) {
   // Mass transfer mutation
   const massTransferMutation = useMutation({
     mutationFn: (transferData: TransferData) => {
-      return TransactionService.createMassTransfer(transferData);
+      return TransferService.createMassTransfer(transferData);
     },
     onSuccess: (data) => {
       toast.success('Virements multiples effectués avec succès', {
@@ -77,7 +79,7 @@ export function useTransfer(options: UseTransferOptions = {}) {
       const phoneNumber = '0600000000'; // This would normally be fetched from the account
       
       // Request SMS validation
-      const { validationId } = await TransactionService.requestTransferValidation(
+      const { validationId } = await ValidationService.requestTransferValidation(
         transferData, 
         phoneNumber
       );
