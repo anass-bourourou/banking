@@ -1,10 +1,10 @@
-
 import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AccountCard from '@/components/accounts/AccountCard';
 import RecentTransactions from '@/components/accounts/RecentTransactions';
 import CardDisplay from '@/components/accounts/CardDisplay';
+import { Transaction } from '@/services/TransactionService';
 
 const Accounts = () => {
   const accounts = [
@@ -61,10 +61,10 @@ const Accounts = () => {
     }
   ];
 
-  const recentTransactions = [
-    { id: 1, description: 'Salaire Attijariwafa Bank', amount: 8500.00, type: 'credit' as const, date: '15/09/2023' },
-    { id: 2, description: 'Loyer Appartement', amount: 3800.00, type: 'debit' as const, date: '12/09/2023' },
-    { id: 3, description: 'Marjane Casablanca', amount: 720.75, type: 'debit' as const, date: '10/09/2023' },
+  const recentTransactions: Transaction[] = [
+    { id: 1, description: 'Salaire Attijariwafa Bank', amount: 8500.00, type: 'credit' as const, date: '15/09/2023', status: 'completed' },
+    { id: 2, description: 'Loyer Appartement', amount: 3800.00, type: 'debit' as const, date: '12/09/2023', status: 'completed' },
+    { id: 3, description: 'Marjane Casablanca', amount: 720.75, type: 'debit' as const, date: '10/09/2023', status: 'completed' },
   ];
 
   return (
