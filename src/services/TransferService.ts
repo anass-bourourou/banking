@@ -10,6 +10,19 @@ export class TransferService extends BaseService {
   static async createTransfer(transferData: TransferData): Promise<Transaction> {
     try {
       if (TransferService.useSupabase() && TransferService.getSupabase()) {
+        // Map the transferType to the display value used in the UI
+        let displayTransferType: string;
+        switch(transferData.transferType) {
+          case 'instant':
+            displayTransferType = 'instantané';
+            break;
+          case 'mass':
+            displayTransferType = 'multiple';
+            break;
+          default:
+            displayTransferType = transferData.transferType || 'standard';
+        }
+
         const transactionData = {
           description: transferData.description || 'Virement',
           amount: transferData.amount,
@@ -18,7 +31,7 @@ export class TransferService extends BaseService {
           account_id: transferData.fromAccountId,
           recipient_account: typeof transferData.toAccount === 'string' ? transferData.toAccount : String(transferData.toAccount),
           recipient_name: transferData.recipientName,
-          transfer_type: transferData.transferType || 'standard',
+          transfer_type: displayTransferType,
           status: 'completed',
           reference_id: `TR-${Date.now()}`
         };

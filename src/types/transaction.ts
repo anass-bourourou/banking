@@ -9,7 +9,7 @@ export interface Transaction {
   category?: string;
   recipient_account?: string;
   recipient_name?: string;
-  transfer_type?: 'standard' | 'instant' | 'mass';
+  transfer_type?: 'standard' | 'instantané' | 'multiple' | 'instant' | 'mass';
   status: 'completed' | 'pending' | 'failed';
   reference_id?: string;
   fees?: number;
