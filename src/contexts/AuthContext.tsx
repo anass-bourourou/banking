@@ -1,6 +1,6 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { isAuthenticated, logout } from '@/services/api';
+import { isAuthenticated, logout, login as apiLogin } from '@/services/api';
 import { BaseService } from '@/services/BaseService';
 
 interface User {
@@ -14,7 +14,7 @@ interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
-  login: (token: string, userData: Partial<User>) => void;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
 
@@ -73,15 +73,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     checkAuth();
   }, []);
   
-  const handleLogin = (token: string, userData: Partial<User>) => {
-    localStorage.setItem('auth_token', token);
-    
-    setUser({
-      id: userData.id || '1',
-      name: userData.name || 'User',
-      email: userData.email || 'user@example.com',
-      avatar: userData.avatar,
-    });
+  const handleLogin = async (username: string, password: string): Promise<void> => {
+    setIsLoading(true);
+    try {
+      const token = await apiLogin(username, password);
+      localStorage.setItem('auth_token', token);
+      
+      // For demo purposes, set a mock user after login
+      setUser({
+        id: '1',
+        name: 'Anass Belcaid',
+        email: username + '@example.com',
+      });
+    } catch (error) {
+      console.error('Login failed:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
   };
   
   const handleLogout = () => {

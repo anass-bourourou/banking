@@ -5,20 +5,20 @@ import { toast } from 'sonner';
 import { Transaction } from '@/types/transaction';
 
 export class TransactionService extends BaseService {
-  static async getRecentTransactions(limit: number = 10): Promise<Transaction[]> {
+  static async getRecentTransactions(): Promise<Transaction[]> {
     try {
       if (TransactionService.useSupabase() && TransactionService.getSupabase()) {
         const { data, error } = await TransactionService.getSupabase()!
           .from('transactions')
           .select('*')
           .order('date', { ascending: false })
-          .limit(limit);
+          .limit(10);
 
         if (error) throw error;
         return data || [];
       } else {
         // Use backend API
-        const response = await fetchWithAuth(`/api/transactions/recent?limit=${limit}`);
+        const response = await fetchWithAuth(`/api/transactions/recent`);
         
         if (!response.ok) {
           const errorData = await response.json();

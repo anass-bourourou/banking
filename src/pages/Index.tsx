@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import AppLayout from '@/components/layout/AppLayout';
@@ -24,7 +25,7 @@ const Index = () => {
 
   const { data: transactions, isLoading: isLoadingTransactions } = useQuery({
     queryKey: ['recentTransactions'],
-    queryFn: TransactionService.getRecentTransactions,
+    queryFn: () => TransactionService.getRecentTransactions(),
   });
 
   const spendingData = [

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useQuery } from '@tanstack/react-query';
@@ -46,10 +46,10 @@ const Transfers = () => {
     queryFn: BeneficiaryService.getBeneficiaries,
   });
 
-  // Fetch recent transfers
+  // Fetch recent transfers - fix the queryFn
   const { data: recentTransfers = [], isLoading: isLoadingTransfers, refetch: refetchTransfers } = useQuery({
     queryKey: ['recentTransfers'],
-    queryFn: TransactionService.getRecentTransactions,
+    queryFn: () => TransactionService.getRecentTransactions(),
   });
   
   // Fetch transfer receipts (not used directly, but keeping for future reference)
@@ -57,12 +57,6 @@ const Transfers = () => {
     queryKey: ['transferReceipts'],
     queryFn: TransferReceiptService.getTransferReceipts,
   });
-
-  // Pre-select first account if available
-  useEffect(() => {
-    // This effect is kept to maintain the same behavior as before
-    // (Not directly used since account selection is now handled by the child components)
-  }, [accounts]);
 
   return (
     <AppLayout>

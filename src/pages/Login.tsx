@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,7 +20,7 @@ const Login = () => {
     setError('');
     
     try {
-      await login({ username, password });
+      await login(username, password);
       
       toast.success('Connexion réussie', {
         description: 'Bienvenue dans votre espace bancaire'

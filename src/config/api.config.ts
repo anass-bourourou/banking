@@ -23,6 +23,40 @@ export const API_URL = isLocal ? LOCAL_API_URL : (isDevelopment ? DEV_API_URL : 
 export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
 export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
 
+// API endpoints configuration
+export const ENDPOINTS = {
+  AUTH: {
+    LOGIN: '/api/auth/login',
+    REGISTER: '/api/auth/register',
+    LOGOUT: '/api/auth/logout',
+    PROFILE: '/api/auth/profile',
+  },
+  ACCOUNTS: {
+    LIST: '/api/accounts',
+    DETAIL: (id: string | number) => `/api/accounts/${id}`,
+  },
+  TRANSACTIONS: {
+    LIST: '/api/transactions',
+    DETAIL: (id: string | number) => `/api/transactions/${id}`,
+    RECENT: '/api/transactions/recent',
+    FILTER: '/api/transactions/filter',
+  },
+  BENEFICIARIES: {
+    LIST: '/api/beneficiaries',
+    ADD: '/api/beneficiaries',
+    DETAIL: (id: string | number) => `/api/beneficiaries/${id}`,
+  },
+  TRANSFERS: {
+    CREATE: '/api/transfers',
+    MASS: '/api/transfers/mass',
+    RECURRING: '/api/transfers/recurring',
+  },
+  STATEMENTS: {
+    LIST: '/api/statements',
+    DOWNLOAD: (id: string | number) => `/api/statements/${id}/download`,
+  },
+};
+
 // Feature flags
 export const FEATURES = {
   USE_SUPABASE: true,       // Whether to use Supabase or REST API

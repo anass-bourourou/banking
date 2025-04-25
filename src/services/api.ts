@@ -68,6 +68,11 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
 // Login function
 export const login = async (username: string, password: string): Promise<string> => {
   try {
+    // For demo purposes, just return a mock token if using demo credentials
+    if (username === 'demo' && password === 'password') {
+      return 'mock-token-for-demo-user';
+    }
+    
     const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
