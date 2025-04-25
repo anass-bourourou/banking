@@ -23,7 +23,7 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   
   const headers = new Headers(options.headers || {});
   
-  if (!headers.has('Content-Type') && !options.body || typeof options.body === 'string') {
+  if (!headers.has('Content-Type') && (!options.body || typeof options.body === 'string')) {
     headers.set('Content-Type', 'application/json');
   }
   
@@ -32,6 +32,8 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   }
   
   try {
+    console.log(`🌐 API Request: ${url}`);
+    
     const response = await fetch(url, {
       ...options,
       headers
@@ -39,16 +41,21 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
     
     if (!response.ok && !endpoint.includes('/download')) {
       // For non-download endpoints, try to parse error
-      const errorData = await response.json().catch(() => ({ error: 'An unknown error occurred' }));
-      throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      const errorData = await response.json().catch(() => ({ error: `HTTP Error: ${response.status} ${response.statusText}` }));
+      
+      console.error(`❌ API Error (${response.status}):`, errorData);
+      
+      throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
     }
+    
+    console.log(`✅ API Response: ${url}`, response.status);
     
     return response;
   } catch (error) {
     console.error(`API request failed for ${endpoint}:`, error);
     
-    // Only show toast for non-download endpoints
-    if (!endpoint.includes('/download')) {
+    // Only show toast for non-download endpoints and non-404 errors (404s are often handled by the UI)
+    if (!endpoint.includes('/download') && !(error instanceof Error && error.message.includes('404'))) {
       toast.error('Erreur de connexion', { 
         description: error instanceof Error ? error.message : 'Impossible de contacter le serveur'
       });
@@ -61,7 +68,7 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
 // Login function
 export const login = async (username: string, password: string): Promise<string> => {
   try {
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetch(`${API_URL}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -71,10 +78,14 @@ export const login = async (username: string, password: string): Promise<string>
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Login failed');
+      throw new Error(errorData.message || 'Échec de la connexion');
     }
 
     const data = await response.json();
+    
+    // Save token to localStorage
+    localStorage.setItem('auth_token', data.token);
+    
     return data.token;
   } catch (error) {
     console.error('Login error:', error);
@@ -89,7 +100,7 @@ export const register = async (userData: {
   password: string;
 }): Promise<{ token: string; userId: string }> => {
   try {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetch(`${API_URL}/api/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -99,13 +110,37 @@ export const register = async (userData: {
 
     if (!response.ok) {
       const errorData = await response.json();
-      throw new Error(errorData.message || 'Registration failed');
+      throw new Error(errorData.message || 'Échec de l\'inscription');
     }
 
     const data = await response.json();
+    
+    // Save token to localStorage
+    localStorage.setItem('auth_token', data.token);
+    
     return { token: data.token, userId: data.userId };
   } catch (error) {
     console.error('Registration error:', error);
     throw error;
   }
+};
+
+// Logout function
+export const logout = (): void => {
+  localStorage.removeItem('auth_token');
+  // Redirect to login page
+  window.location.href = '/login';
+};
+
+// Check if user is authenticated
+export const isAuthenticated = (): boolean => {
+  return !!getToken();
+};
+
+// Function to handle API errors
+export const handleApiError = (error: unknown, defaultMessage: string = 'Une erreur est survenue'): string => {
+  if (error instanceof Error) {
+    return error.message;
+  }
+  return defaultMessage;
 };

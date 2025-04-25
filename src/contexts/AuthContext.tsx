@@ -1,151 +1,111 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { AuthService, User, LoginCredentials } from '@/services/AuthService';
-import { toast } from 'sonner';
+import { isAuthenticated, logout } from '@/services/api';
+import { BaseService } from '@/services/BaseService';
 
-// Ajouter les informations personnelles supplémentaires à la définition du type User
-type ExtendedUser = User & {
-  phone?: string;
-  email?: string;
-  city?: string;
-  country?: string;
-  address?: string;
-};
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  avatar?: string;
+}
 
-type AuthContextType = {
-  isAuthenticated: boolean;
-  user: ExtendedUser | null;
+interface AuthContextType {
+  user: User | null;
   isLoading: boolean;
-  login: (credentials: LoginCredentials) => Promise<void>;
-  logout: () => Promise<void>;
-  updateUserProfile: (userData: Partial<ExtendedUser>) => Promise<void>;
-};
+  isAuthenticated: boolean;
+  login: (token: string, userData: Partial<User>) => void;
+  logout: () => void;
+}
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [user, setUser] = useState<ExtendedUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  // Check authentication status on mount
   useEffect(() => {
-    // Check authentication status on load
     const checkAuth = async () => {
       try {
-        const userData = await AuthService.checkAuthStatus();
-        if (userData) {
-          // Ajouter les informations personnelles par défaut pour la démo
-          const extendedUser: ExtendedUser = {
-            ...userData,
-            name: 'Anass Bourourou',
-            phone: '0607810824',
-            email: 'anassbr01@gmail.com',
-            city: 'Casablanca',
-            country: 'Maroc',
-            address: 'Bouskoura'
-          };
-          
-          setIsAuthenticated(true);
-          setUser(extendedUser);
+        if (isAuthenticated()) {
+          // If Supabase is available, get user from Supabase
+          if (BaseService.useSupabase() && BaseService.getSupabase()) {
+            const { data, error } = await BaseService.getSupabase()!.auth.getUser();
+            
+            if (error) {
+              throw error;
+            }
+            
+            if (data.user) {
+              // Get user profile
+              const { data: profile } = await BaseService.getSupabase()!
+                .from('profiles')
+                .select('*')
+                .eq('id', data.user.id)
+                .single();
+                
+              setUser({
+                id: data.user.id,
+                email: data.user.email || '',
+                name: profile?.name || data.user.email?.split('@')[0] || 'User',
+                avatar: profile?.avatar_url,
+              });
+            }
+          } else {
+            // Mock authenticated user
+            setUser({
+              id: '1',
+              name: 'Anass Belcaid',
+              email: 'anass@example.com',
+            });
+          }
         }
       } catch (error) {
         console.error('Authentication check failed:', error);
-        // Clear potentially corrupted auth data
-        localStorage.removeItem('isAuthenticated');
-        localStorage.removeItem('user');
+        // Clear invalid auth state
+        logout();
       } finally {
         setIsLoading(false);
       }
     };
-
+    
     checkAuth();
   }, []);
-
-  const login = async (credentials: LoginCredentials): Promise<void> => {
-    setIsLoading(true);
-    try {
-      const userData = await AuthService.login(credentials);
-      
-      // Ajouter les informations personnelles par défaut pour la démo
-      const extendedUser: ExtendedUser = {
-        ...userData,
-        name: 'Anass Bourourou',
-        phone: '0607810824',
-        email: 'anassbr01@gmail.com',
-        city: 'Casablanca',
-        country: 'Maroc',
-        address: 'Bouskoura'
-      };
-      
-      setIsAuthenticated(true);
-      setUser(extendedUser);
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+  
+  const handleLogin = (token: string, userData: Partial<User>) => {
+    localStorage.setItem('auth_token', token);
+    
+    setUser({
+      id: userData.id || '1',
+      name: userData.name || 'User',
+      email: userData.email || 'user@example.com',
+      avatar: userData.avatar,
+    });
   };
-
-  const logout = async (): Promise<void> => {
-    setIsLoading(true);
-    try {
-      await AuthService.logout();
-      setIsAuthenticated(false);
-      setUser(null);
-    } catch (error) {
-      console.error('Logout failed:', error);
-      throw error;
-    } finally {
-      setIsLoading(false);
-    }
+  
+  const handleLogout = () => {
+    logout();
+    setUser(null);
   };
-
-  const updateUserProfile = async (userData: Partial<ExtendedUser>): Promise<void> => {
-    try {
-      // Mise à jour côté API
-      const updatedUser = await AuthService.updateProfile(userData);
-      
-      // Combiner les nouvelles données avec les anciennes
-      const extendedUpdatedUser: ExtendedUser = {
-        ...updatedUser,
-        name: userData.name || user?.name || 'Anass Bourourou',
-        phone: userData.phone || user?.phone || '0607810824',
-        email: userData.email || user?.email || 'anassbr01@gmail.com',
-        city: userData.city || user?.city || 'Casablanca',
-        country: userData.country || user?.country || 'Maroc',
-        address: userData.address || user?.address || 'Bouskoura'
-      };
-      
-      setUser(extendedUpdatedUser);
-      toast.success('Profil mis à jour avec succès');
-    } catch (error) {
-      console.error('Profile update failed:', error);
-      toast.error('Échec de la mise à jour du profil');
-      throw error;
-    }
+  
+  const value = {
+    user,
+    isLoading,
+    isAuthenticated: !!user,
+    login: handleLogin,
+    logout: handleLogout,
   };
-
-  return (
-    <AuthContext.Provider 
-      value={{ 
-        isAuthenticated, 
-        user, 
-        isLoading, 
-        login, 
-        logout,
-        updateUserProfile
-      }}
-    >
-      {children}
-    </AuthContext.Provider>
-  );
+  
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-export const useAuth = (): AuthContextType => {
+export const useAuth = () => {
   const context = useContext(AuthContext);
+  
   if (context === undefined) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
+  
   return context;
 };

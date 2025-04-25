@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -27,12 +26,17 @@ export class BeneficiaryService extends BaseService {
         if (error) throw error;
         return data || [];
       } else {
-        // Use mock API
-        const response = await fetchWithAuth('/beneficiaries');
+        // Use backend API
+        const response = await fetchWithAuth('/api/beneficiaries');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la récupération des bénéficiaires');
+        }
+        
         const data = await response.json();
         
-        // Ensure the response matches the Beneficiary[] type
-        if (Array.isArray(data) && data.length > 0 && 'iban' in data[0]) {
+        if (Array.isArray(data)) {
           return data as Beneficiary[];
         }
         
@@ -73,23 +77,24 @@ export class BeneficiaryService extends BaseService {
 
         return data;
       } else {
-        // Use mock API
-        const response = await fetchWithAuth('/beneficiaries', {
+        // Use backend API
+        const response = await fetchWithAuth('/api/beneficiaries', {
           method: 'POST',
           body: JSON.stringify(beneficiary)
         });
-        const data = await response.json();
         
-        // Ensure the response includes an id
-        if (data && 'id' in data) {
-          toast.success('Bénéficiaire ajouté avec succès', {
-            description: `${beneficiary.name} a été ajouté à vos bénéficiaires`
-          });
-          return data as Beneficiary;
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de l\'ajout du bénéficiaire');
         }
         
-        console.error('Unexpected response format:', data);
-        throw new Error('Format de réponse inattendu');
+        const data = await response.json();
+        
+        toast.success('Bénéficiaire ajouté avec succès', {
+          description: `${beneficiary.name} a été ajouté à vos bénéficiaires`
+        });
+        
+        return data as Beneficiary;
       }
     } catch (error) {
       console.error('Error adding beneficiary:', error);
@@ -242,12 +247,18 @@ export class BeneficiaryService extends BaseService {
         if (error) throw error;
         return data || [];
       } else {
-        // Use mock API - in a real app, we would have a dedicated endpoint
-        const response = await fetchWithAuth('/beneficiaries');
-        const allBeneficiaries = await response.json();
+        // Use backend API
+        const response = await fetchWithAuth('/api/beneficiaries/favorites');
         
-        if (Array.isArray(allBeneficiaries)) {
-          return (allBeneficiaries as Beneficiary[]).filter(b => b.favorite);
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la récupération des favoris');
+        }
+        
+        const data = await response.json();
+        
+        if (Array.isArray(data)) {
+          return data as Beneficiary[];
         }
         
         return [];

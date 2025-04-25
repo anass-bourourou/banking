@@ -1,3 +1,4 @@
+
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -56,19 +57,29 @@ export class AccountService extends BaseService {
               history: historyData?.map(h => ({
                 month: h.month,
                 amount: h.amount
-              })) || []
+              })) || [],
+              phone_number: account.phone_number,
+              email: account.email,
+              city: account.city,
+              country: account.country,
+              address: account.address
             };
           })
         );
 
         return accountsWithHistory;
       } else {
-        // Use mock API
-        const response = await fetchWithAuth('/accounts');
+        // Use backend API
+        const response = await fetchWithAuth('/api/accounts');
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la récupération des comptes');
+        }
+        
         const data = await response.json();
         
-        // Ensure the response matches the Account[] type
-        if (Array.isArray(data) && data.length > 0 && 'balance' in data[0]) {
+        if (Array.isArray(data)) {
           return data as Account[];
         }
         
@@ -112,23 +123,27 @@ export class AccountService extends BaseService {
           history: historyData?.map(h => ({
             month: h.month,
             amount: h.amount
-          })) || []
+          })) || [],
+          phone_number: account.phone_number,
+          email: account.email,
+          city: account.city,
+          country: account.country,
+          address: account.address
         };
       } else {
-        // Use mock API
-        const response = await fetchWithAuth(`/accounts/${id}`);
-        const data = await response.json();
+        // Use backend API
+        const response = await fetchWithAuth(`/api/accounts/${id}`);
         
-        // Ensure the response matches the Account type
-        if (data && 'id' in data && 'balance' in data) {
-          return data as Account;
-        } else if (Array.isArray(data) && data.length > 0) {
-          // If the API returns an array with one account, take the first one
-          const account = data.find(acc => acc.id === id);
-          if (account) return account as Account;
+        if (!response.ok) {
+          if (response.status === 404) {
+            return null;
+          }
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la récupération du compte');
         }
         
-        return null;
+        const data = await response.json();
+        return data as Account;
       }
     } catch (error) {
       console.error(`Error fetching account ${id}:`, error);
@@ -147,11 +162,16 @@ export class AccountService extends BaseService {
 
         if (error) throw error;
       } else {
-        // Use mock API
-        await fetchWithAuth(`/accounts/${accountId}/balance`, {
+        // Use backend API
+        const response = await fetchWithAuth(`/api/accounts/${accountId}/balance`, {
           method: 'PUT',
           body: JSON.stringify(data)
         });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.message || 'Erreur lors de la mise à jour du solde');
+        }
       }
     } catch (error) {
       console.error(`Error updating account balance for ${accountId}:`, error);
