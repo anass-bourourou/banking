@@ -1,9 +1,8 @@
 
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, useNavigate } from 'react-router-dom';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
-import { toast } from 'sonner';
 
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
@@ -18,7 +17,7 @@ import EDocuments from '@/pages/EDocuments';
 import Settings from '@/pages/Settings';
 import NotFound from '@/pages/NotFound';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
-import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import { AuthProvider } from '@/contexts/AuthContext';
 import { ThemeProvider } from '@/components/theme/ThemeProvider';
 import MoroccanBills from '@/pages/MoroccanBills';
 import Receipts from '@/pages/Receipts';
@@ -26,6 +25,7 @@ import Complaints from '@/pages/Complaints';
 import Notifications from '@/pages/Notifications';
 import Statements from '@/pages/Statements';
 import Payments from '@/pages/Payments';
+import SessionTimeoutComponent from '@/components/auth/SessionTimeoutComponent';
 
 import './App.css';
 
@@ -38,52 +38,13 @@ const queryClient = new QueryClient({
   },
 });
 
-const SessionTimeout: React.FC = () => {
-  const { isAuthenticated, logout } = useAuth();
-  const navigate = useNavigate();
-  const [lastActivity, setLastActivity] = useState<number>(Date.now());
-  const timeoutDuration = 20 * 60 * 1000; // 20 minutes in milliseconds
-
-  useEffect(() => {
-    if (!isAuthenticated) return;
-
-    const resetTimer = () => {
-      setLastActivity(Date.now());
-    };
-
-    const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
-    events.forEach(event => {
-      window.addEventListener(event, resetTimer);
-    });
-
-    const intervalId = setInterval(() => {
-      const now = Date.now();
-      if (now - lastActivity > timeoutDuration) {
-        logout();
-        navigate('/login');
-        toast.error("Session expirée", {
-          description: "Votre session a expiré en raison d'inactivité. Veuillez vous reconnecter."
-        });
-      }
-    }, 60000);
-
-    return () => {
-      events.forEach(event => {
-        window.removeEventListener(event, resetTimer);
-      });
-      clearInterval(intervalId);
-    };
-  }, [isAuthenticated, lastActivity, logout, navigate]);
-
-  return null;
-};
-
 function App() {
   return (
     <Router>
       <ThemeProvider defaultTheme="light" storageKey="bankwise-theme">
         <QueryClientProvider client={queryClient}>
           <AuthProvider>
+            <SessionTimeoutComponent />
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
@@ -104,7 +65,6 @@ function App() {
               <Route path="/notifications" element={<ProtectedRoute><Notifications /></ProtectedRoute>} />
               <Route path="*" element={<NotFound />} />
             </Routes>
-            <SessionTimeout />
             <Toaster />
           </AuthProvider>
         </QueryClientProvider>
