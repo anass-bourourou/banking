@@ -8,20 +8,25 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
+import { AuthService } from '@/services/AuthService';
 
 const Login = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
-  const { login, isLoading } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    setIsLoading(true);
     
     try {
-      await login(username, password);
+      const user = await AuthService.login({ username, password });
+      
+      setUser(user);
       
       toast.success('Connexion réussie', {
         description: 'Bienvenue dans votre espace bancaire'
@@ -35,6 +40,8 @@ const Login = () => {
       toast.error('Échec de la connexion', {
         description: errorMessage
       });
+    } finally {
+      setIsLoading(false);
     }
   };
 

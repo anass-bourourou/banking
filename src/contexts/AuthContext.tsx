@@ -1,19 +1,12 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { isAuthenticated, logout, login as apiLogin } from '@/services/api';
-import { BaseService } from '@/services/BaseService';
-
-interface User {
-  id: string;
-  name: string;
-  email: string;
-  avatar?: string;
-}
+import { AuthService, User } from '@/services/AuthService';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isAuthenticated: boolean;
+  setUser: (user: User | null) => void;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
 }
@@ -28,18 +21,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        if (isAuthenticated()) {
-          // For demo purposes, set a mock user after login
-          setUser({
-            id: '1',
-            name: 'Anass Belcaid',
-            email: 'anass@example.com',
-          });
-        }
+        const currentUser = await AuthService.checkAuthStatus();
+        setUser(currentUser);
       } catch (error) {
         console.error('Authentication check failed:', error);
         // Clear invalid auth state
-        logout();
+        AuthService.logout();
       } finally {
         setIsLoading(false);
       }
@@ -51,15 +38,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const handleLogin = async (username: string, password: string): Promise<void> => {
     setIsLoading(true);
     try {
-      const token = await apiLogin(username, password);
-      localStorage.setItem('auth_token', token);
-      
-      // For demo purposes, set a mock user after login
-      setUser({
-        id: '1',
-        name: 'Anass Belcaid',
-        email: username + '@example.com',
-      });
+      const loggedInUser = await AuthService.login({ username, password });
+      setUser(loggedInUser);
     } catch (error) {
       console.error('Login failed:', error);
       throw error;
@@ -68,15 +48,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
   
-  const handleLogout = () => {
-    logout();
-    setUser(null);
+  const handleLogout = async () => {
+    try {
+      await AuthService.logout();
+    } finally {
+      setUser(null);
+    }
   };
   
   const value = {
     user,
     isLoading,
     isAuthenticated: !!user,
+    setUser,
     login: handleLogin,
     logout: handleLogout,
   };

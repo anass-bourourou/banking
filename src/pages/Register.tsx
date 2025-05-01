@@ -7,6 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { AuthService } from '@/services/AuthService';
+import { useAuth } from '@/contexts/AuthContext';
 
 const Register = () => {
   const [name, setName] = useState('');
@@ -15,6 +16,7 @@ const Register = () => {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
+  const { setUser } = useAuth();
 
   const handleRegister = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,7 +30,8 @@ const Register = () => {
     
     setIsLoading(true);
     try {
-      await AuthService.register({ name, email, password });
+      const user = await AuthService.register({ name, email, password });
+      setUser(user);
       
       toast.success('Compte créé avec succès', {
         description: 'Vous pouvez maintenant vous connecter'
