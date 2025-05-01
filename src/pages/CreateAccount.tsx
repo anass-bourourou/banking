@@ -11,12 +11,14 @@ import { useForm } from 'react-hook-form';
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Eye, EyeOff, Lock, Mail, User } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, Home, IdCard } from 'lucide-react';
 
 // Form schema with validation
 const formSchema = z.object({
   name: z.string().min(3, "Le nom doit contenir au moins 3 caractères"),
   email: z.string().email("Email invalide"),
+  address: z.string().min(5, "L'adresse doit contenir au moins 5 caractères"),
+  cin: z.string().min(6, "Le CIN doit contenir au moins 6 caractères"),
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
   confirmPassword: z.string()
 }).refine(data => data.password === data.confirmPassword, {
@@ -35,6 +37,8 @@ const CreateAccount = () => {
     defaultValues: {
       name: "",
       email: "",
+      address: "",
+      cin: "",
       password: "",
       confirmPassword: "",
     },
@@ -47,6 +51,8 @@ const CreateAccount = () => {
         name: values.name,
         email: values.email,
         password: values.password,
+        address: values.address,
+        cin: values.cin,
       });
       
       toast.success('Compte créé avec succès', {
@@ -116,6 +122,48 @@ const CreateAccount = () => {
                           className="pl-10"
                         />
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Adresse</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          placeholder="123 Rue Example, Ville" 
+                          {...field} 
+                          className="pl-10"
+                        />
+                        <Home className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              <FormField
+                control={form.control}
+                name="cin"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>CIN (Carte d'Identité Nationale)</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          placeholder="AB123456" 
+                          {...field} 
+                          className="pl-10"
+                        />
+                        <IdCard className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                       </div>
                     </FormControl>
                     <FormMessage />
