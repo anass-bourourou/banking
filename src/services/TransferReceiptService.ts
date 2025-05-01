@@ -21,25 +21,15 @@ export interface TransferReceipt {
 export class TransferReceiptService extends BaseService {
   static async getTransferReceipts(): Promise<TransferReceipt[]> {
     try {
-      if (TransferReceiptService.useSupabase() && TransferReceiptService.getSupabase()) {
-        const { data, error } = await TransferReceiptService.getSupabase()!
-          .from('transfer_receipts')
-          .select('*')
-          .order('date', { ascending: false });
-
-        if (error) throw error;
-        return data || [];
-      } else {
-        // Utiliser l'API backend
-        const response = await fetchWithAuth('/transfers/receipts');
-        const data = await response.json();
-        
-        if (Array.isArray(data)) {
-          return data as TransferReceipt[];
-        }
-        
-        return [];
+      // Use SpringBoot backend API
+      const response = await fetchWithAuth('/transfers/receipts');
+      const data = await response.json();
+      
+      if (Array.isArray(data)) {
+        return data as TransferReceipt[];
       }
+      
+      return [];
     } catch (error) {
       console.error('Error fetching transfer receipts:', error);
       toast.error('Impossible de récupérer les reçus de virement');
@@ -49,53 +39,26 @@ export class TransferReceiptService extends BaseService {
 
   static async downloadTransferReceipt(receiptId: string): Promise<void> {
     try {
-      if (TransferReceiptService.useSupabase() && TransferReceiptService.getSupabase()) {
-        const { data: receipt, error: getError } = await TransferReceiptService.getSupabase()!
-          .from('transfer_receipts')
-          .select('*')
-          .eq('id', receiptId)
-          .single();
-
-        if (getError) throw getError;
-        if (!receipt || !receipt.pdfUrl) {
-          throw new Error('Le reçu n\'est pas disponible');
-        }
-
-        // Télécharger le fichier
-        const { data, error: downloadError } = await TransferReceiptService.getSupabase()!
-          .storage
-          .from('transfer_receipts')
-          .download(receipt.pdfUrl);
-
-        if (downloadError) throw downloadError;
-
-        // Créer un lien pour télécharger le fichier
-        const url = URL.createObjectURL(data);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `reçu_virement_${receipt.reference.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
-      } else {
-        // Utiliser l'API backend
-        const response = await fetchWithAuth(`/transfers/receipts/${receiptId}/download`, {
-          method: 'GET'
-        });
-        
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `reçu_virement_${receiptId}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+      // Use SpringBoot backend API
+      const response = await fetchWithAuth(`/transfers/receipts/${receiptId}/download`, {
+        method: 'GET'
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
       }
+      
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `reçu_virement_${receiptId}.pdf`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      
+      // Clean up
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error(`Error downloading transfer receipt ${receiptId}:`, error);
       toast.error('Impossible de télécharger le reçu');
