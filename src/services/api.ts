@@ -33,23 +33,42 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
   }
   
   try {
-    console.log(`🌐 API Request: ${url}`);
+    console.log(`🌐 API Request: ${url}`, options.method || 'GET');
+    
+    if (options.body) {
+      console.log('Request payload:', options.body);
+    }
     
     const response = await fetch(url, {
       ...options,
       headers
     });
     
+    console.log(`📢 API Response status: ${response.status} ${response.statusText}`);
+    
     if (!response.ok && !endpoint.includes('/download')) {
       // For non-download endpoints, try to parse error
-      const errorData = await response.json().catch(() => ({ error: `HTTP Error: ${response.status} ${response.statusText}` }));
+      const errorData = await response.json().catch(() => ({ 
+        error: `HTTP Error: ${response.status} ${response.statusText}` 
+      }));
       
       console.error(`❌ API Error (${response.status}):`, errorData);
       
+      if (response.status === 401) {
+        // Handle unauthorized access
+        localStorage.removeItem('auth_token');
+        toast.error('Session expirée', { 
+          description: 'Veuillez vous reconnecter' 
+        });
+        
+        // Redirect to login after a short delay
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
+      }
+      
       throw new Error(errorData.error || errorData.message || `HTTP error! status: ${response.status}`);
     }
-    
-    console.log(`✅ API Response: ${url}`, response.status);
     
     return response;
   } catch (error) {
@@ -69,16 +88,8 @@ export const fetchWithAuth = async (endpoint: string, options: RequestInit = {})
 // Login function
 export const login = async (username: string, password: string): Promise<string> => {
   try {
-    // For demo purposes, just return a mock token if using demo credentials
-    if (username === 'demo' && password === 'password') {
-      return 'mock-token-for-demo-user';
-    }
-    
-    const response = await fetch(`${API_URL}/auth/login`, {
+    const response = await fetchWithAuth('/auth/login', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify({ username, password }),
     });
 
@@ -104,13 +115,12 @@ export const register = async (userData: {
   name: string;
   email: string;
   password: string;
+  address?: string;
+  cin?: string;
 }): Promise<{ token: string; userId: string }> => {
   try {
-    const response = await fetch(`${API_URL}/auth/register`, {
+    const response = await fetchWithAuth('/auth/register', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
       body: JSON.stringify(userData),
     });
 
@@ -121,8 +131,8 @@ export const register = async (userData: {
 
     const data = await response.json();
     
-    // Save token to localStorage
-    localStorage.setItem('auth_token', data.token);
+    // We won't automatically store the token to maintain proper authentication flow
+    // User should explicitly log in after registration
     
     return { token: data.token, userId: data.userId };
   } catch (error) {

@@ -2,9 +2,7 @@
 import { User, LoginCredentials, RegistrationData } from './auth/types';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
-
-// Get API URL from environment
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
+import { API_URL, ENDPOINTS } from '@/config/api.config';
 
 // Export types
 export type { User, LoginCredentials, RegistrationData };
@@ -12,7 +10,8 @@ export type { User, LoginCredentials, RegistrationData };
 export class AuthService {
   static async login(credentials: LoginCredentials): Promise<User> {
     try {
-      const response = await fetchWithAuth('/auth/login', {
+      console.log('Logging in with credentials:', credentials);
+      const response = await fetchWithAuth(ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
         body: JSON.stringify(credentials),
       });
@@ -23,6 +22,7 @@ export class AuthService {
       }
 
       const data = await response.json();
+      console.log('Login successful, received data:', data);
       
       // Store the token in localStorage
       localStorage.setItem('auth_token', data.token);
@@ -39,7 +39,7 @@ export class AuthService {
       const token = localStorage.getItem('auth_token');
       
       if (token) {
-        await fetchWithAuth('/auth/logout', {
+        await fetchWithAuth(ENDPOINTS.AUTH.LOGOUT, {
           method: 'POST',
         });
       }
@@ -61,7 +61,7 @@ export class AuthService {
         return null;
       }
       
-      const response = await fetchWithAuth('/auth/me');
+      const response = await fetchWithAuth(ENDPOINTS.AUTH.PROFILE);
 
       if (!response.ok) {
         // Token is invalid
@@ -79,7 +79,7 @@ export class AuthService {
   
   static async updateProfile(userData: Partial<User>): Promise<User> {
     try {
-      const response = await fetchWithAuth('/auth/profile', {
+      const response = await fetchWithAuth(ENDPOINTS.AUTH.PROFILE, {
         method: 'PUT',
         body: JSON.stringify(userData),
       });
@@ -102,7 +102,7 @@ export class AuthService {
   static async register(user: RegistrationData): Promise<User> {
     try {
       console.log('Registering user:', user);
-      const response = await fetchWithAuth('/auth/register', {
+      const response = await fetchWithAuth(ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
         body: JSON.stringify(user),
       });
@@ -114,9 +114,6 @@ export class AuthService {
 
       const data = await response.json();
       console.log('Registration successful:', data);
-      
-      // We won't store the token here as we want the user to log in explicitly
-      // This is different from the Register.tsx approach
       
       return data.user;
     } catch (error) {
