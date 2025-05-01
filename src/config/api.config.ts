@@ -12,54 +12,50 @@ const isProduction = import.meta.env.PROD;
 const isLocal = window.location.hostname === 'localhost';
 
 // Define base URLs for different environments
-const LOCAL_API_URL = 'http://localhost:3000';
-const DEV_API_URL = 'https://dev-api.yourbank.com';
-const PROD_API_URL = 'https://api.yourbank.com';
+const LOCAL_API_URL = 'http://localhost:8080/api';
+const DEV_API_URL = 'https://dev-api.yourbank.com/api';
+const PROD_API_URL = 'https://api.yourbank.com/api';
 
 // Set API_URL based on environment
 export const API_URL = isLocal ? LOCAL_API_URL : (isDevelopment ? DEV_API_URL : PROD_API_URL);
 
-// Supabase configuration
-export const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || '';
-export const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY || '';
-
 // API endpoints configuration
 export const ENDPOINTS = {
   AUTH: {
-    LOGIN: '/api/auth/login',
-    REGISTER: '/api/auth/register',
-    LOGOUT: '/api/auth/logout',
-    PROFILE: '/api/auth/profile',
+    LOGIN: '/auth/login',
+    REGISTER: '/auth/register',
+    LOGOUT: '/auth/logout',
+    PROFILE: '/auth/profile',
   },
   ACCOUNTS: {
-    LIST: '/api/accounts',
-    DETAIL: (id: string | number) => `/api/accounts/${id}`,
+    LIST: '/accounts',
+    DETAIL: (id: string | number) => `/accounts/${id}`,
   },
   TRANSACTIONS: {
-    LIST: '/api/transactions',
-    DETAIL: (id: string | number) => `/api/transactions/${id}`,
-    RECENT: '/api/transactions/recent',
-    FILTER: '/api/transactions/filter',
+    LIST: '/transactions',
+    DETAIL: (id: string | number) => `/transactions/${id}`,
+    RECENT: '/transactions/recent',
+    FILTER: '/transactions/filter',
   },
   BENEFICIARIES: {
-    LIST: '/api/beneficiaries',
-    ADD: '/api/beneficiaries',
-    DETAIL: (id: string | number) => `/api/beneficiaries/${id}`,
+    LIST: '/beneficiaries',
+    ADD: '/beneficiaries',
+    DETAIL: (id: string | number) => `/beneficiaries/${id}`,
   },
   TRANSFERS: {
-    CREATE: '/api/transfers',
-    MASS: '/api/transfers/mass',
-    RECURRING: '/api/transfers/recurring',
+    CREATE: '/transfers',
+    MASS: '/transfers/mass',
+    RECURRING: '/transfers/recurring',
   },
   STATEMENTS: {
-    LIST: '/api/statements',
-    DOWNLOAD: (id: string | number) => `/api/statements/${id}/download`,
+    LIST: '/statements',
+    DOWNLOAD: (id: string | number) => `/statements/${id}/download`,
   },
 };
 
 // Feature flags
 export const FEATURES = {
-  USE_SUPABASE: true,       // Whether to use Supabase or REST API
+  USE_BACKEND: true,     // Whether to use SpringBoot backend or mock data
   ENABLE_TRANSFERS: true,   // Enable transfer functionality
   ENABLE_PAYMENTS: true,    // Enable payment functionality
   ENABLE_STATEMENTS: true,  // Enable statements functionality

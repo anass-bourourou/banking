@@ -37,18 +37,18 @@ const Transfers = () => {
   // Fetch accounts
   const { data: accounts = [], isLoading: isLoadingAccounts } = useQuery({
     queryKey: ['accounts'],
-    queryFn: AccountService.getAccounts,
+    queryFn: () => AccountService.getAccounts(),
   });
 
   // Fetch beneficiaries
   const { data: beneficiaries = [], isLoading: isLoadingBeneficiaries } = useQuery({
     queryKey: ['beneficiaries'],
-    queryFn: BeneficiaryService.getBeneficiaries,
+    queryFn: () => BeneficiaryService.getBeneficiaries(),
   });
 
   // Fetch recent transfers - fix the queryFn
-  const { data: recentTransfers = [], isLoading: isLoadingTransfers, refetch: refetchTransfers } = useQuery({
-    queryKey: ['recentTransfers'],
+  const { data: recentTransactions = [], isLoading: isLoadingTransactions, refetch: refetchTransfers } = useQuery({
+    queryKey: ['recentTransactions'],
     queryFn: () => TransactionService.getRecentTransactions(),
   });
   
@@ -106,8 +106,8 @@ const Transfers = () => {
         {/* Transfer History Tab */}
         <TabsContent value="history">
           <TransferHistoryTab 
-            transfers={recentTransfers}
-            isLoading={isLoadingTransfers}
+            transfers={recentTransactions}
+            isLoading={isLoadingTransactions}
             onViewReceipt={viewReceipt}
           />
         </TabsContent>

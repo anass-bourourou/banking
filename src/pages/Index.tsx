@@ -20,7 +20,7 @@ const Index = () => {
   
   const { data: accounts, isLoading: isLoadingAccounts } = useQuery({
     queryKey: ['accounts'],
-    queryFn: AccountService.getAccounts,
+    queryFn: () => AccountService.getAccounts(),
   });
 
   const { data: transactions, isLoading: isLoadingTransactions } = useQuery({

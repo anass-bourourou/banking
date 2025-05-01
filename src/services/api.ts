@@ -6,6 +6,7 @@ export interface ApiResponse<T = any> {
   data?: T;
   error?: string;
   success: boolean;
+  message?: string;
 }
 
 // Using export type to avoid circular dependency issues
@@ -73,7 +74,7 @@ export const login = async (username: string, password: string): Promise<string>
       return 'mock-token-for-demo-user';
     }
     
-    const response = await fetch(`${API_URL}/api/auth/login`, {
+    const response = await fetch(`${API_URL}/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ export const register = async (userData: {
   password: string;
 }): Promise<{ token: string; userId: string }> => {
   try {
-    const response = await fetch(`${API_URL}/api/auth/register`, {
+    const response = await fetch(`${API_URL}/auth/register`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

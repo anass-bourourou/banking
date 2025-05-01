@@ -1,46 +1,19 @@
 
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-
 export class BaseService {
-  private static supabase: SupabaseClient | null = null;
-  private static useSupabaseFlag: boolean = false;
+  private static useBackendFlag: boolean = true;
   
   /**
-   * Initialize Supabase client
+   * Check if backend integration should be used
    */
-  static initSupabase(supabaseUrl: string, supabaseKey: string): void {
-    if (!supabaseUrl || !supabaseKey) {
-      console.error('Supabase URL and key must be provided');
-      return;
-    }
-    
-    BaseService.supabase = createClient(supabaseUrl, supabaseKey);
-    BaseService.useSupabaseFlag = true;
-    console.log('Supabase client initialized');
+  static useBackend(): boolean {
+    return BaseService.useBackendFlag;
   }
   
   /**
-   * Check if Supabase is initialized and should be used
+   * Set whether to use backend API
    */
-  static useSupabase(): boolean {
-    return BaseService.useSupabaseFlag && !!BaseService.supabase;
-  }
-  
-  /**
-   * Get Supabase client instance
-   */
-  static getSupabase(): SupabaseClient | null {
-    return BaseService.supabase;
-  }
-  
-  /**
-   * Set whether to use Supabase or REST API
-   */
-  static setUseSupabase(useSupabase: boolean): void {
-    if (useSupabase && !BaseService.supabase) {
-      console.warn('Supabase client not initialized. Call initSupabase first.');
-    }
-    BaseService.useSupabaseFlag = useSupabase && !!BaseService.supabase;
+  static setUseBackend(useBackend: boolean): void {
+    BaseService.useBackendFlag = useBackend;
   }
   
   /**

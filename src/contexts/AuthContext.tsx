@@ -29,37 +29,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const checkAuth = async () => {
       try {
         if (isAuthenticated()) {
-          // If Supabase is available, get user from Supabase
-          if (BaseService.useSupabase() && BaseService.getSupabase()) {
-            const { data, error } = await BaseService.getSupabase()!.auth.getUser();
-            
-            if (error) {
-              throw error;
-            }
-            
-            if (data.user) {
-              // Get user profile
-              const { data: profile } = await BaseService.getSupabase()!
-                .from('profiles')
-                .select('*')
-                .eq('id', data.user.id)
-                .single();
-                
-              setUser({
-                id: data.user.id,
-                email: data.user.email || '',
-                name: profile?.name || data.user.email?.split('@')[0] || 'User',
-                avatar: profile?.avatar_url,
-              });
-            }
-          } else {
-            // Mock authenticated user
-            setUser({
-              id: '1',
-              name: 'Anass Belcaid',
-              email: 'anass@example.com',
-            });
-          }
+          // For demo purposes, set a mock user after login
+          setUser({
+            id: '1',
+            name: 'Anass Belcaid',
+            email: 'anass@example.com',
+          });
         }
       } catch (error) {
         console.error('Authentication check failed:', error);

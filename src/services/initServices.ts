@@ -1,6 +1,6 @@
 
 import { BaseService } from './BaseService';
-import { SUPABASE_URL, SUPABASE_ANON_KEY, FEATURES } from '@/config/api.config';
+import { FEATURES } from '@/config/api.config';
 
 /**
  * Initialize application services
@@ -8,14 +8,13 @@ import { SUPABASE_URL, SUPABASE_ANON_KEY, FEATURES } from '@/config/api.config';
 export const initServices = () => {
   console.log('🚀 Initializing application services...');
   
-  // Initialize Supabase if credentials are available
-  if (SUPABASE_URL && SUPABASE_ANON_KEY) {
-    BaseService.initSupabase(SUPABASE_URL, SUPABASE_ANON_KEY);
-    BaseService.setUseSupabase(FEATURES.USE_SUPABASE);
-    console.log('✅ Supabase initialized');
+  // Set the backend flag based on feature flag
+  BaseService.setUseBackend(FEATURES.USE_BACKEND);
+  
+  if (FEATURES.USE_BACKEND) {
+    console.log('✅ SpringBoot backend integration enabled');
   } else {
-    console.warn('⚠️ Supabase credentials not found, using REST API');
-    BaseService.setUseSupabase(false);
+    console.log('⚠️ Using mock data, backend integration disabled');
   }
   
   console.log('✅ Application services initialized');
