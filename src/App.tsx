@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 
 import Login from '@/pages/Login';
 import Register from '@/pages/Register';
+import CreateAccount from '@/pages/CreateAccount';
 import Index from '@/pages/Index';
 import Accounts from '@/pages/Accounts';
 import Transfers from '@/pages/Transfers';
@@ -86,6 +87,7 @@ function App() {
             <Routes>
               <Route path="/login" element={<Login />} />
               <Route path="/register" element={<Register />} />
+              <Route path="/create-account" element={<CreateAccount />} />
               <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
               <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
               <Route path="/accounts" element={<ProtectedRoute><Accounts /></ProtectedRoute>} />

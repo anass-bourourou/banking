@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -112,6 +112,15 @@ const Login = () => {
             >
               {isLoading ? "Connexion en cours..." : "Se connecter"}
             </Button>
+            
+            <div className="text-center mt-4">
+              <p className="text-sm text-bank-gray">
+                Vous n'avez pas de compte ?{' '}
+                <Link to="/create-account" className="text-bank-primary hover:underline">
+                  Créer un compte
+                </Link>
+              </p>
+            </div>
             
             <div className="mt-4 text-center text-sm text-bank-gray">
               <p>Pour la démonstration, utilisez :</p>

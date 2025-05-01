@@ -101,6 +101,7 @@ export class AuthService {
 
   static async register(user: RegistrationData): Promise<User> {
     try {
+      console.log('Registering user:', user);
       const response = await fetchWithAuth('/auth/register', {
         method: 'POST',
         body: JSON.stringify(user),
@@ -112,11 +113,10 @@ export class AuthService {
       }
 
       const data = await response.json();
+      console.log('Registration successful:', data);
       
-      // Store token if provided
-      if (data.token) {
-        localStorage.setItem('auth_token', data.token);
-      }
+      // We won't store the token here as we want the user to log in explicitly
+      // This is different from the Register.tsx approach
       
       return data.user;
     } catch (error) {
