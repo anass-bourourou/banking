@@ -13,8 +13,8 @@ const isLocal = window.location.hostname === 'localhost';
 
 // Define base URLs for different environments
 const LOCAL_API_URL = 'http://localhost:8080/api';
-const DEV_API_URL = 'https://dev-api.yourbank.com/api';
-const PROD_API_URL = 'https://api.yourbank.com/api';
+const DEV_API_URL = 'https://dev-api.anassbank.com/api';
+const PROD_API_URL = 'https://api.anassbank.com/api';
 
 // Set API_URL based on environment
 export const API_URL = isLocal ? LOCAL_API_URL : (isDevelopment ? DEV_API_URL : PROD_API_URL);
@@ -65,7 +65,7 @@ export const FEATURES = {
 
 // App configuration
 export const APP_CONFIG = {
-  APP_NAME: 'YourBank',
+  APP_NAME: 'AnassBank',
   APP_VERSION: '1.0.0',
   CURRENCY: 'MAD',
   LANGUAGE: 'fr-MA',

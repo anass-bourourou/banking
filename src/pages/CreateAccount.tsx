@@ -11,12 +11,13 @@ import { useForm } from 'react-hook-form';
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Eye, EyeOff, Lock, Mail, User, Home, IdCard } from 'lucide-react';
+import { Eye, EyeOff, Lock, Mail, User, Home, IdCard, Phone } from 'lucide-react';
 
 // Form schema with validation
 const formSchema = z.object({
   name: z.string().min(3, "Le nom doit contenir au moins 3 caractères"),
   email: z.string().email("Email invalide"),
+  phone: z.string().min(8, "Le numéro de téléphone doit contenir au moins 8 caractères"),
   address: z.string().min(5, "L'adresse doit contenir au moins 5 caractères"),
   cin: z.string().min(6, "Le CIN doit contenir au moins 6 caractères"),
   password: z.string().min(8, "Le mot de passe doit contenir au moins 8 caractères"),
@@ -37,6 +38,7 @@ const CreateAccount = () => {
     defaultValues: {
       name: "",
       email: "",
+      phone: "",
       address: "",
       cin: "",
       password: "",
@@ -53,6 +55,7 @@ const CreateAccount = () => {
         password: values.password,
         address: values.address,
         cin: values.cin,
+        phone: values.phone,
       });
       
       toast.success('Compte créé avec succès', {
@@ -72,7 +75,7 @@ const CreateAccount = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-bank-primary/10 to-white p-4">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-bank-primary">BankWise</h1>
+        <h1 className="text-3xl font-bold text-bank-primary">AnassBank</h1>
         <p className="text-bank-gray">Votre banque en ligne sécurisée</p>
       </div>
       
@@ -122,6 +125,28 @@ const CreateAccount = () => {
                           className="pl-10"
                         />
                         <Mail className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="phone"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Numéro de téléphone</FormLabel>
+                    <FormControl>
+                      <div className="relative">
+                        <Input 
+                          type="tel" 
+                          placeholder="+212 6XX XXX XXX" 
+                          {...field} 
+                          className="pl-10"
+                        />
+                        <Phone className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-500" />
                       </div>
                     </FormControl>
                     <FormMessage />

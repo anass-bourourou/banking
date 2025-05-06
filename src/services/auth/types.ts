@@ -10,6 +10,7 @@ export interface User {
   email: string;
   address?: string;
   cin?: string;
+  phone?: string;
   lastLogin?: string;
 }
 
@@ -19,4 +20,5 @@ export interface RegistrationData {
   name: string;
   address?: string;
   cin?: string;
+  phone?: string;
 }

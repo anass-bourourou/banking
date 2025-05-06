@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,7 +49,7 @@ const Register = () => {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-bank-primary/10 to-white p-4">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-bank-primary">BankWise</h1>
+        <h1 className="text-3xl font-bold text-bank-primary">AnassBank</h1>
         <p className="text-bank-gray">Votre banque en ligne sécurisée</p>
       </div>
       
