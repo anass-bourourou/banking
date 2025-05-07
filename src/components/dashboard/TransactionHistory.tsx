@@ -1,74 +1,24 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ArrowUp, ArrowDown, Search } from 'lucide-react';
-
-interface Transaction {
-  id: string;
-  date: string;
-  description: string;
-  amount: number;
-  type: 'credit' | 'debit';
-  category: string;
-}
+import { useQuery } from '@tanstack/react-query';
+import { TransactionService } from '@/services/TransactionService';
+import { Transaction } from '@/types/transaction';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const TransactionHistory: React.FC = () => {
-  const [searchTerm, setSearchTerm] = React.useState('');
+  const [searchTerm, setSearchTerm] = useState('');
   
-  const transactions: Transaction[] = [
-    {
-      id: '1',
-      date: '2023-09-15',
-      description: 'Salaire Attijariwafa Bank',
-      amount: 8500.00,
-      type: 'credit',
-      category: 'Revenu',
-    },
-    {
-      id: '2',
-      date: '2023-09-12',
-      description: 'Loyer Appartement',
-      amount: 3800.00,
-      type: 'debit',
-      category: 'Logement',
-    },
-    {
-      id: '3',
-      date: '2023-09-10',
-      description: 'Marjane Casablanca',
-      amount: 728.75,
-      type: 'debit',
-      category: 'Courses',
-    },
-    {
-      id: '4',
-      date: '2023-09-08',
-      description: 'Restaurant Dar Naji',
-      amount: 425.50,
-      type: 'debit',
-      category: 'Restaurant',
-    },
-    {
-      id: '5',
-      date: '2023-09-05',
-      description: 'Remboursement Karim',
-      amount: 500.00,
-      type: 'credit',
-      category: 'Amis',
-    },
-    {
-      id: '6',
-      date: '2023-09-01',
-      description: 'Facture ONEE',
-      amount: 450.25,
-      type: 'debit',
-      category: 'Factures',
-    },
-  ];
-
-  const filteredTransactions = transactions.filter(transaction => 
+  const { data: transactions, isLoading } = useQuery({
+    queryKey: ['recent-transactions'],
+    queryFn: TransactionService.getRecentTransactions,
+  });
+  
+  const filteredTransactions = transactions?.filter(transaction => 
     transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    transaction.category.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+    transaction.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    transaction.type?.toLowerCase().includes(searchTerm.toLowerCase())
+  ) || [];
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -100,9 +50,24 @@ const TransactionHistory: React.FC = () => {
       </div>
       
       <div className="max-h-[400px] overflow-y-auto p-4 md:p-6">
-        <div className="space-y-4">
-          {filteredTransactions.length > 0 ? (
-            filteredTransactions.map((transaction) => (
+        {isLoading ? (
+          <div className="space-y-4">
+            {[...Array(5)].map((_, index) => (
+              <div key={index} className="flex items-center justify-between rounded-xl p-3">
+                <div className="flex items-center space-x-3">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <div>
+                    <Skeleton className="h-5 w-40" />
+                    <Skeleton className="mt-1 h-4 w-24" />
+                  </div>
+                </div>
+                <Skeleton className="h-5 w-20" />
+              </div>
+            ))}
+          </div>
+        ) : filteredTransactions.length > 0 ? (
+          <div className="space-y-4">
+            {filteredTransactions.map((transaction: Transaction) => (
               <div
                 key={transaction.id}
                 className="flex items-center justify-between rounded-xl p-3 transition-colors hover:bg-bank-gray-light"
@@ -119,7 +84,9 @@ const TransactionHistory: React.FC = () => {
                   </div>
                   <div>
                     <p className="font-medium text-bank-dark">{transaction.description}</p>
-                    <p className="text-sm text-bank-gray">{transaction.category} • {formatDate(transaction.date)}</p>
+                    <p className="text-sm text-bank-gray">
+                      {transaction.category || 'Non classé'} • {formatDate(transaction.date)}
+                    </p>
                   </div>
                 </div>
                 <div className={`font-medium ${
@@ -132,13 +99,13 @@ const TransactionHistory: React.FC = () => {
                   })} MAD
                 </div>
               </div>
-            ))
-          ) : (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <p className="text-bank-gray">Aucune transaction trouvée</p>
-            </div>
-          )}
-        </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center py-8 text-center">
+            <p className="text-bank-gray">Aucune transaction trouvée</p>
+          </div>
+        )}
       </div>
     </div>
   );

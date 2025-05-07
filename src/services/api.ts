@@ -117,6 +117,7 @@ export const register = async (userData: {
   password: string;
   address?: string;
   cin?: string;
+  phone?: string;
 }): Promise<{ token: string; userId: string }> => {
   try {
     const response = await fetchWithAuth('/auth/register', {

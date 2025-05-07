@@ -2,6 +2,7 @@
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
+import { ENDPOINTS } from '@/config/api.config';
 
 export interface Beneficiary {
   id: string;
@@ -19,7 +20,7 @@ export class BeneficiaryService extends BaseService {
   static async getBeneficiaries(): Promise<Beneficiary[]> {
     try {
       // Use SpringBoot backend API
-      const response = await fetchWithAuth('/api/beneficiaries');
+      const response = await fetchWithAuth(ENDPOINTS.BENEFICIARIES.LIST);
       
       if (!response.ok) {
         const errorData = await response.json();
@@ -43,7 +44,7 @@ export class BeneficiaryService extends BaseService {
   static async addBeneficiary(beneficiary: Omit<Beneficiary, 'id' | 'favorite'>): Promise<Beneficiary> {
     try {
       // Use SpringBoot backend API
-      const response = await fetchWithAuth('/api/beneficiaries', {
+      const response = await fetchWithAuth(ENDPOINTS.BENEFICIARIES.ADD, {
         method: 'POST',
         body: JSON.stringify(beneficiary)
       });
@@ -70,16 +71,17 @@ export class BeneficiaryService extends BaseService {
   static async updateBeneficiary(id: string, updates: Partial<Beneficiary>): Promise<Beneficiary> {
     try {
       // Use SpringBoot backend API
-      const response = await fetchWithAuth(`/api/beneficiaries/${id}`, {
+      const response = await fetchWithAuth(`${ENDPOINTS.BENEFICIARIES.DETAIL(id)}`, {
         method: 'PATCH',
         body: JSON.stringify(updates)
       });
-      const data = await response.json();
       
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.message || 'Erreur lors de la mise à jour du bénéficiaire');
       }
+      
+      const data = await response.json();
       
       if (data && 'id' in data) {
         toast.success('Bénéficiaire mis à jour', {
@@ -99,7 +101,7 @@ export class BeneficiaryService extends BaseService {
   static async deleteBeneficiary(id: string): Promise<void> {
     try {
       // Use SpringBoot backend API
-      const response = await fetchWithAuth(`/api/beneficiaries/${id}`, {
+      const response = await fetchWithAuth(`${ENDPOINTS.BENEFICIARIES.DETAIL(id)}`, {
         method: 'DELETE'
       });
       
@@ -121,7 +123,7 @@ export class BeneficiaryService extends BaseService {
   static async toggleFavorite(id: string, isFavorite: boolean): Promise<Beneficiary> {
     try {
       // Use SpringBoot backend API
-      const response = await fetchWithAuth(`/api/beneficiaries/${id}/favorite`, {
+      const response = await fetchWithAuth(`${ENDPOINTS.BENEFICIARIES.DETAIL(id)}/favorite`, {
         method: 'PUT',
         body: JSON.stringify({ favorite: isFavorite })
       });
@@ -155,7 +157,7 @@ export class BeneficiaryService extends BaseService {
   static async getFavoriteBeneficiaries(): Promise<Beneficiary[]> {
     try {
       // Use SpringBoot backend API
-      const response = await fetchWithAuth('/api/beneficiaries/favorites');
+      const response = await fetchWithAuth(`${ENDPOINTS.BENEFICIARIES.LIST}/favorites`);
       
       if (!response.ok) {
         const errorData = await response.json();

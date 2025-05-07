@@ -1,31 +1,32 @@
 
-import { User, LoginCredentials, RegistrationData } from './auth/types';
 import { fetchWithAuth } from './api';
-import { toast } from 'sonner';
-import { API_URL, ENDPOINTS } from '@/config/api.config';
+import { User, LoginCredentials, RegistrationData } from './auth/types';
+import { ENDPOINTS } from '@/config/api.config';
 
-// Export types
-export type { User, LoginCredentials, RegistrationData };
+export type { User, LoginCredentials, RegistrationData } from './auth/types';
 
 export class AuthService {
+  /**
+   * Login user with credentials
+   */
   static async login(credentials: LoginCredentials): Promise<User> {
     try {
-      console.log('Logging in with credentials:', credentials);
       const response = await fetchWithAuth(ENDPOINTS.AUTH.LOGIN, {
         method: 'POST',
-        body: JSON.stringify(credentials),
+        body: JSON.stringify(credentials)
       });
-
+      
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Login failed');
+        throw new Error(errorData.message || 'Identifiants incorrects');
       }
-
-      const data = await response.json();
-      console.log('Login successful, received data:', data);
       
-      // Store the token in localStorage
-      localStorage.setItem('auth_token', data.token);
+      const data = await response.json();
+      
+      // Store auth token in localStorage
+      if (data.token) {
+        localStorage.setItem('auth_token', data.token);
+      }
       
       return data.user;
     } catch (error) {
@@ -33,114 +34,86 @@ export class AuthService {
       throw error;
     }
   }
-
-  static async logout(): Promise<void> {
-    try {
-      const token = localStorage.getItem('auth_token');
-      
-      if (token) {
-        await fetchWithAuth(ENDPOINTS.AUTH.LOGOUT, {
-          method: 'POST',
-        });
-      }
-      
-      // Clear the token
-      localStorage.removeItem('auth_token');
-    } catch (error) {
-      console.error('Logout failed:', error);
-      // Still clear token on error to ensure UI updates
-      localStorage.removeItem('auth_token');
-    }
-  }
-
-  static async checkAuthStatus(): Promise<User | null> {
-    try {
-      const token = localStorage.getItem('auth_token');
-      
-      if (!token) {
-        return null;
-      }
-      
-      const response = await fetchWithAuth(ENDPOINTS.AUTH.PROFILE);
-
-      if (!response.ok) {
-        // Token is invalid
-        localStorage.removeItem('auth_token');
-        return null;
-      }
-
-      const data = await response.json();
-      return data.user;
-    } catch (error) {
-      console.error('Auth check failed:', error);
-      return null;
-    }
-  }
   
-  static async updateProfile(userData: Partial<User>): Promise<User> {
+  /**
+   * Register new user
+   */
+  static async register(registrationData: RegistrationData): Promise<User> {
     try {
-      const response = await fetchWithAuth(ENDPOINTS.AUTH.PROFILE, {
-        method: 'PUT',
-        body: JSON.stringify(userData),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Profile update failed');
-      }
-
-      const data = await response.json();
-      toast.success('Profil mis à jour avec succès');
-      return data.user;
-    } catch (error) {
-      console.error('Profile update failed:', error);
-      toast.error('Échec de la mise à jour du profil');
-      throw error;
-    }
-  }
-
-  static async register(user: RegistrationData): Promise<User> {
-    try {
-      console.log('Registering user:', user);
       const response = await fetchWithAuth(ENDPOINTS.AUTH.REGISTER, {
         method: 'POST',
-        body: JSON.stringify(user),
+        body: JSON.stringify(registrationData)
       });
-
+      
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Registration failed');
+        throw new Error(errorData.message || 'Échec de l\'inscription');
       }
-
-      const data = await response.json();
-      console.log('Registration successful:', data);
       
+      const data = await response.json();
       return data.user;
     } catch (error) {
       console.error('Registration failed:', error);
       throw error;
     }
   }
-
-  static async resetPassword(email: string): Promise<void> {
+  
+  /**
+   * Logout current user
+   */
+  static logout(): void {
+    // Clear auth token
+    localStorage.removeItem('auth_token');
+    
+    // Try to hit the logout endpoint if available
+    fetchWithAuth(ENDPOINTS.AUTH.LOGOUT, {
+      method: 'POST'
+    }).catch(error => {
+      console.error('Error during logout:', error);
+    });
+    
+    // Force redirect to login page
+    window.location.href = '/login';
+  }
+  
+  /**
+   * Get current user profile information
+   */
+  static async getUserProfile(): Promise<User> {
     try {
-      const response = await fetchWithAuth('/auth/reset-password', {
-        method: 'POST',
-        body: JSON.stringify({ email }),
-      });
-
+      const response = await fetchWithAuth(ENDPOINTS.AUTH.PROFILE);
+      
       if (!response.ok) {
         const errorData = await response.json();
-        throw new Error(errorData.message || 'Password reset failed');
+        throw new Error(errorData.message || 'Impossible de récupérer le profil');
       }
-
-      toast.success('Email de réinitialisation envoyé', { 
-        description: 'Veuillez vérifier votre boîte de réception' 
-      });
+      
+      const data = await response.json();
+      return data as User;
     } catch (error) {
-      console.error('Password reset failed:', error);
-      toast.error('Échec de la réinitialisation du mot de passe');
+      console.error('Failed to get user profile:', error);
       throw error;
+    }
+  }
+  
+  /**
+   * Check if user is authenticated and get current user
+   */
+  static async checkAuthStatus(): Promise<User | null> {
+    const token = localStorage.getItem('auth_token');
+    
+    if (!token) {
+      return null;
+    }
+    
+    try {
+      const user = await this.getUserProfile();
+      return user;
+    } catch (error) {
+      console.error('Auth check failed:', error);
+      // Clear invalid token
+      localStorage.removeItem('auth_token');
+      return null;
     }
   }
 }

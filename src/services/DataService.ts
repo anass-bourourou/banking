@@ -23,7 +23,7 @@ export { TransferService } from './TransferService';
 export { BeneficiaryService } from './BeneficiaryService';
 export { NotificationService } from './NotificationService';
 
-// DataService class for backward compatibility
+// DataService class for backward compatibility - connects to SpringBoot
 export class DataService {
   static getAccounts = AccountService.getAccounts;
   static getAccountById = AccountService.getAccountById;
