@@ -3,6 +3,7 @@ import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
 import { Transaction, TransferData } from '@/types/transaction';
+import { ENDPOINTS } from '@/config/api.config';
 
 export type { TransferData } from '@/types/transaction';
 
@@ -10,7 +11,7 @@ export class TransferService extends BaseService {
   static async createTransfer(transferData: TransferData): Promise<Transaction> {
     try {
       // Use SpringBoot backend API
-      const response = await fetchWithAuth('/transfers', {
+      const response = await fetchWithAuth(ENDPOINTS.TRANSFERS.CREATE, {
         method: 'POST',
         body: JSON.stringify(transferData)
       });
@@ -39,7 +40,7 @@ export class TransferService extends BaseService {
   static async createMassTransfer(transferData: TransferData): Promise<{recipientsCount: number, totalAmount: number}> {
     try {
       // Use SpringBoot backend API
-      const response = await fetchWithAuth('/transfers/mass', {
+      const response = await fetchWithAuth(ENDPOINTS.TRANSFERS.MASS, {
         method: 'POST',
         body: JSON.stringify(transferData)
       });

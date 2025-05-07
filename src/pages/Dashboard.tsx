@@ -8,9 +8,18 @@ import QuickActions from '@/components/dashboard/QuickActions';
 import TransactionHistory from '@/components/dashboard/TransactionHistory';
 import NotificationsPanel from '@/components/dashboard/NotificationsPanel';
 import { Separator } from '@/components/ui/separator';
+import { useQuery } from '@tanstack/react-query';
+import { AccountService } from '@/services/AccountService';
+import { Loader2 } from 'lucide-react';
 
 const Dashboard: React.FC = () => {
-  // Sample spending data for the chart
+  // Fetch accounts from backend
+  const { data: accounts, isLoading } = useQuery({
+    queryKey: ['accounts'],
+    queryFn: () => AccountService.getAccounts(),
+  });
+
+  // Sample spending data for the chart - this would come from your backend in a real implementation
   const spendingData = [
     { name: 'Alimentation', value: 3500, color: '#4CAF50' },
     { name: 'Transport', value: 1800, color: '#2196F3' },
@@ -25,17 +34,34 @@ const Dashboard: React.FC = () => {
       
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
-          <BalanceCard 
-            accountType="Compte Principal"
-            accountNumber="123456789012"
-            balance={24350.00}
-            currency="MAD"
-            change={{
-              amount: 530.25,
-              percentage: 2.3,
-              increase: true
-            }}
-          />
+          {isLoading ? (
+            <div className="flex h-40 items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-bank-primary" />
+            </div>
+          ) : accounts && accounts.length > 0 ? (
+            <BalanceCard 
+              accountType={accounts[0].name}
+              accountNumber={accounts[0].number}
+              balance={accounts[0].balance}
+              currency="MAD"
+              change={{
+                amount: accounts[0].history?.length > 1 
+                  ? accounts[0].balance - accounts[0].history[accounts[0].history.length - 2].amount
+                  : 0,
+                percentage: accounts[0].history?.length > 1
+                  ? parseFloat(((accounts[0].balance - accounts[0].history[accounts[0].history.length - 2].amount) 
+                    / accounts[0].history[accounts[0].history.length - 2].amount * 100).toFixed(1))
+                  : 0,
+                increase: accounts[0].history?.length > 1
+                  ? accounts[0].balance > accounts[0].history[accounts[0].history.length - 2].amount
+                  : true
+              }}
+            />
+          ) : (
+            <Card className="p-6">
+              <p>Aucun compte disponible</p>
+            </Card>
+          )}
         </div>
         <div>
           <NotificationsPanel />
@@ -56,20 +82,23 @@ const Dashboard: React.FC = () => {
             <h2 className="mb-4 text-xl font-semibold">Soldes des comptes</h2>
             <p className="text-sm text-muted-foreground">Vue d'ensemble de tous vos comptes</p>
             <Separator className="my-4" />
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span>Compte courant</span>
-                <span className="font-semibold">24,350.00 MAD</span>
+            {isLoading ? (
+              <div className="flex h-20 items-center justify-center">
+                <Loader2 className="h-6 w-6 animate-spin text-bank-primary" />
               </div>
-              <div className="flex items-center justify-between">
-                <span>Compte épargne</span>
-                <span className="font-semibold">135,720.50 MAD</span>
+            ) : (
+              <div className="space-y-4">
+                {accounts?.map(account => (
+                  <div key={account.id} className="flex items-center justify-between">
+                    <span>{account.name}</span>
+                    <span className="font-semibold">{account.balance.toLocaleString('fr-MA', {
+                      minimumFractionDigits: 2,
+                      maximumFractionDigits: 2
+                    })} {account.currency}</span>
+                  </div>
+                ))}
               </div>
-              <div className="flex items-center justify-between">
-                <span>Compte devise</span>
-                <span className="font-semibold">5,230.00 USD</span>
-              </div>
-            </div>
+            )}
           </Card>
         </div>
       </div>

@@ -2,17 +2,18 @@
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
+import { ENDPOINTS } from '@/config/api.config';
 
 export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: 'info' | 'warning' | 'error' | 'success';
-  read: boolean;
   date: string;
+  type: 'info' | 'warning' | 'error';
+  read: boolean;
   category?: string;
   link?: string;
-  metadata?: Record<string, any>;
+  userId?: string;
 }
 
 export class NotificationService extends BaseService {
@@ -20,6 +21,12 @@ export class NotificationService extends BaseService {
     try {
       // Use SpringBoot backend API
       const response = await fetchWithAuth('/notifications');
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Erreur lors de la récupération des notifications');
+      }
+      
       const data = await response.json();
       
       if (Array.isArray(data)) {
@@ -34,55 +41,31 @@ export class NotificationService extends BaseService {
     }
   }
 
-  static async markAsRead(id: string): Promise<void> {
+  static async markNotificationAsRead(notificationId: string): Promise<boolean> {
     try {
       // Use SpringBoot backend API
-      await fetchWithAuth(`/notifications/${id}/read`, {
+      const response = await fetchWithAuth(`/notifications/${notificationId}/read`, {
         method: 'PUT'
       });
+      
+      return response.ok;
     } catch (error) {
-      console.error(`Error marking notification ${id} as read:`, error);
-      toast.error('Impossible de marquer la notification comme lue');
-      throw new Error('Impossible de marquer la notification comme lue');
+      console.error('Error marking notification as read:', error);
+      return false;
     }
   }
 
-  static async markAllAsRead(): Promise<void> {
+  static async markAllNotificationsAsRead(): Promise<boolean> {
     try {
       // Use SpringBoot backend API
-      await fetchWithAuth('/notifications/read-all', {
+      const response = await fetchWithAuth('/notifications/read-all', {
         method: 'PUT'
       });
+      
+      return response.ok;
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
-      toast.error('Impossible de marquer toutes les notifications comme lues');
-      throw new Error('Impossible de marquer toutes les notifications comme lues');
-    }
-  }
-  
-  static async addNotification(notification: Omit<Notification, 'id' | 'read' | 'date'>): Promise<Notification> {
-    try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth('/notifications', {
-        method: 'POST',
-        body: JSON.stringify({
-          ...notification,
-          read: false,
-          date: new Date().toISOString()
-        })
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de l\'ajout de la notification');
-      }
-      
-      const data = await response.json();
-      return data as Notification;
-    } catch (error) {
-      console.error('Error adding notification:', error);
-      toast.error('Impossible d\'ajouter la notification');
-      throw new Error('Impossible d\'ajouter la notification');
+      return false;
     }
   }
 }
