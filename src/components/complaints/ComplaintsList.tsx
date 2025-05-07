@@ -77,11 +77,11 @@ const ComplaintsList: React.FC<ComplaintsListProps> = ({ complaints, isLoading }
                 <div className="flex flex-col space-y-4">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h3 className="font-medium">{complaint.title}</h3>
+                      <h3 className="font-medium">{complaint.subject || complaint.title}</h3>
                       <p className="text-sm text-bank-gray">
-                        {formatDate(complaint.created_at)}
+                        {formatDate(complaint.date || complaint.created_at || new Date().toISOString())}
                         {complaint.category && ` • ${complaint.category}`}
-                        {complaint.reference_id && ` • Réf: ${complaint.reference_id}`}
+                        {(complaint.reference_id) && ` • Réf: ${complaint.reference_id}`}
                       </p>
                     </div>
                     <div>
@@ -101,13 +101,19 @@ const ComplaintsList: React.FC<ComplaintsListProps> = ({ complaints, isLoading }
                     <p className="whitespace-pre-line">{complaint.description}</p>
                   </div>
                   
-                  {complaint.response && (
+                  {(complaint.responses && complaint.responses.length > 0 || complaint.response) && (
                     <div className="rounded-lg bg-gray-50 p-3">
                       <p className="text-sm font-medium mb-1">Réponse :</p>
-                      <p className="text-sm whitespace-pre-line">{complaint.response}</p>
-                      {complaint.response_date && (
+                      <p className="text-sm whitespace-pre-line">
+                        {complaint.responses && complaint.responses.length > 0 
+                          ? complaint.responses[0].text 
+                          : complaint.response}
+                      </p>
+                      {(complaint.responses && complaint.responses[0]?.date || complaint.response_date) && (
                         <p className="text-xs text-bank-gray mt-2">
-                          Répondu le {formatDate(complaint.response_date)}
+                          Répondu le {formatDate(complaint.responses 
+                            ? complaint.responses[0].date 
+                            : complaint.response_date || new Date().toISOString())}
                         </p>
                       )}
                     </div>

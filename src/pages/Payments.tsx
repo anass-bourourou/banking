@@ -43,7 +43,7 @@ const Payments = () => {
     .filter(bill => bill.status === 'pending')
     .slice(0, 5)
     .map(bill => ({
-      id: bill.id,
+      id: parseInt(bill.id) || Math.floor(Math.random() * 1000), // Convert to number or generate random ID
       payee: bill.description,
       amount: bill.amount,
       dueDate: new Date(bill.dueDate).toLocaleDateString('fr-MA'),
@@ -55,7 +55,7 @@ const Payments = () => {
     .filter(bill => bill.status === 'paid')
     .slice(0, 5)
     .map(bill => ({
-      id: bill.id,
+      id: parseInt(bill.id) || Math.floor(Math.random() * 1000), // Convert to number or generate random ID
       payee: bill.description,
       amount: bill.amount,
       date: bill.paymentDate ? new Date(bill.paymentDate).toLocaleDateString('fr-MA') : '-',

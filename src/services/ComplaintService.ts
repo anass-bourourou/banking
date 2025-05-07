@@ -12,6 +12,12 @@ export interface Complaint {
   category: string;
   priority: 'low' | 'medium' | 'high';
   responses?: ComplaintResponse[];
+  // Add fields that match the ones used in the components
+  title?: string;
+  created_at?: string;
+  reference_id?: string;
+  response?: string;
+  response_date?: string;
 }
 
 export interface ComplaintResponse {
@@ -20,6 +26,13 @@ export interface ComplaintResponse {
   date: string;
   from: 'customer' | 'bank';
   attachments?: string[];
+}
+
+export interface ComplaintFormData {
+  title: string;
+  category?: string;
+  description: string;
+  reference_id?: string;
 }
 
 export class ComplaintService extends BaseService {
@@ -47,7 +60,7 @@ export class ComplaintService extends BaseService {
     }
   }
   
-  static async createComplaint(complaintData: { subject: string; category: string; description: string; }): Promise<Complaint> {
+  static async createComplaint(complaintData: ComplaintFormData): Promise<Complaint> {
     try {
       // Use SpringBoot backend API
       const response = await fetchWithAuth('/complaints', {

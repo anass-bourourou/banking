@@ -41,7 +41,7 @@ export class NotificationService extends BaseService {
     }
   }
 
-  static async markNotificationAsRead(notificationId: string): Promise<boolean> {
+  static async markAsRead(notificationId: string): Promise<boolean> {
     try {
       // Use SpringBoot backend API
       const response = await fetchWithAuth(`/notifications/${notificationId}/read`, {
