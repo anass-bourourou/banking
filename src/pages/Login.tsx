@@ -38,7 +38,17 @@ const Login = () => {
       
       navigate('/');
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Identifiants incorrects, veuillez réessayer';
+      console.error('Login error:', error);
+      let errorMessage = 'Identifiants incorrects, veuillez réessayer';
+      
+      if (error instanceof Error) {
+        if (error.message === 'Load failed') {
+          errorMessage = 'Erreur de connexion - Serveur indisponible, veuillez réessayer plus tard';
+        } else {
+          errorMessage = error.message;
+        }
+      }
+      
       setError(errorMessage);
       
       toast({
@@ -58,10 +68,11 @@ const Login = () => {
         <p className="text-bank-gray">Votre banque en ligne sécurisée</p>
       </div>
       
+      {/* Affichage de l'erreur en haut au milieu */}
       {error && (
-        <div className="mb-4 fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600 shadow-md max-w-md w-full">
-          <AlertCircle className="mr-2 h-4 w-4" />
-          {error}
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md flex items-center justify-center rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-600 shadow-md">
+          <AlertCircle className="mr-2 h-5 w-5 flex-shrink-0" />
+          <span>{error}</span>
         </div>
       )}
       
