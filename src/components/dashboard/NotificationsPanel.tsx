@@ -5,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Notification, NotificationService } from '@/services/NotificationService';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 
 interface NotificationsPanelProps {
@@ -13,34 +13,33 @@ interface NotificationsPanelProps {
 }
 
 const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ className }) => {
-  const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showAll, setShowAll] = useState(false);
+  const queryClient = useQueryClient();
   
   // Fetch notifications
-  const { data: fetchedNotifications, isLoading, error } = useQuery({
+  const { data: notifications = [], isLoading, error } = useQuery({
     queryKey: ['notifications'],
     queryFn: NotificationService.getNotifications,
   });
   
-  // Update the state when notifications are fetched
-  useEffect(() => {
-    if (fetchedNotifications) {
-      setNotifications(fetchedNotifications);
-    }
-  }, [fetchedNotifications]);
-  
   // Get unread notifications count
   const unreadCount = notifications.filter(notification => !notification.read).length;
   
-  // Mark all as read
+  // Mark all as read mutation
+  const markAllAsReadMutation = useMutation({
+    mutationFn: NotificationService.markAllNotificationsAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['notifications'] });
+      toast.success('Toutes les notifications ont été marquées comme lues');
+    },
+    onError: () => {
+      toast.error('Impossible de marquer les notifications comme lues');
+    }
+  });
+  
+  // Handle mark all as read
   const handleMarkAllAsRead = () => {
-    // In a real app, this would call an API to update the read status
-    const updatedNotifications = notifications.map(notification => ({
-      ...notification,
-      read: true
-    }));
-    setNotifications(updatedNotifications);
-    toast.success('Toutes les notifications ont été marquées comme lues');
+    markAllAsReadMutation.mutate();
   };
   
   // Get the appropriate icon based on notification type
@@ -72,6 +71,7 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ className }) =>
         {unreadCount > 0 && (
           <button
             onClick={handleMarkAllAsRead}
+            disabled={markAllAsReadMutation.isPending}
             className="flex items-center text-sm text-bank-primary hover:text-bank-primary-dark"
           >
             <CheckCheck className="mr-1 h-4 w-4" />
@@ -123,9 +123,13 @@ const NotificationsPanel: React.FC<NotificationsPanelProps> = ({ className }) =>
                       </div>
                     </div>
                     <div className="flex-shrink-0 self-center">
-                      <button onClick={() => console.log(`View details for notification ${notification.id}`)}>
+                      {notification.link ? (
+                        <a href={notification.link}>
+                          <ChevronRight className="h-5 w-5 text-gray-400" />
+                        </a>
+                      ) : (
                         <ChevronRight className="h-5 w-5 text-gray-400" />
-                      </button>
+                      )}
                     </div>
                   </div>
                 ))}
