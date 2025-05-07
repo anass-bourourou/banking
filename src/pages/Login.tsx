@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
 import { AuthService } from '@/services/AuthService';
@@ -17,6 +18,7 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useAuth();
+  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -28,8 +30,10 @@ const Login = () => {
       
       setUser(user);
       
-      toast.success('Connexion réussie', {
-        description: 'Bienvenue dans votre espace bancaire'
+      toast({
+        title: 'Connexion réussie',
+        description: 'Bienvenue dans votre espace bancaire',
+        variant: 'default',
       });
       
       navigate('/');
@@ -37,8 +41,10 @@ const Login = () => {
       const errorMessage = error instanceof Error ? error.message : 'Identifiants incorrects, veuillez réessayer';
       setError(errorMessage);
       
-      toast.error('Échec de la connexion', {
-        description: errorMessage
+      toast({
+        title: 'Échec de la connexion',
+        description: errorMessage,
+        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -52,6 +58,13 @@ const Login = () => {
         <p className="text-bank-gray">Votre banque en ligne sécurisée</p>
       </div>
       
+      {error && (
+        <div className="mb-4 fixed top-4 left-1/2 transform -translate-x-1/2 z-50 flex items-center rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600 shadow-md max-w-md w-full">
+          <AlertCircle className="mr-2 h-4 w-4" />
+          {error}
+        </div>
+      )}
+      
       <Card className="w-full max-w-md">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl">Connexion</CardTitle>
@@ -60,13 +73,6 @@ const Login = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          {error && (
-            <div className="mb-4 flex items-center rounded-md border border-red-200 bg-red-50 p-3 text-sm text-red-600">
-              <AlertCircle className="mr-2 h-4 w-4" />
-              {error}
-            </div>
-          )}
-          
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
               <Label htmlFor="username">Identifiant</Label>
@@ -87,8 +93,9 @@ const Login = () => {
                   className="text-sm text-bank-primary hover:underline"
                   onClick={(e) => {
                     e.preventDefault();
-                    toast.info("Réinitialisation du mot de passe", {
-                      description: "Un email a été envoyé avec les instructions"
+                    toast({
+                      title: "Réinitialisation du mot de passe",
+                      description: "Un email a été envoyé avec les instructions",
                     });
                   }}
                 >
@@ -120,12 +127,6 @@ const Login = () => {
                   Créer un compte
                 </Link>
               </p>
-            </div>
-            
-            <div className="mt-4 text-center text-sm text-bank-gray">
-              <p>Pour la démonstration, utilisez :</p>
-              <p>Identifiant: <span className="font-medium">demo</span></p>
-              <p>Mot de passe: <span className="font-medium">password</span></p>
             </div>
           </form>
         </CardContent>
