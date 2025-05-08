@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import AppLayout from '@/components/layout/AppLayout';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
-import PaymentForm from '@/components/payments/PaymentForm';
+import NewPaymentForm from '@/components/payments/NewPaymentForm';
 import VignettePayment from '@/components/payments/VignettePayment';
 import UpcomingPayments from '@/components/payments/UpcomingPayments';
 import PaymentHistory from '@/components/payments/PaymentHistory';
@@ -50,7 +50,7 @@ const Payments = () => {
     .filter(bill => bill.status === 'pending')
     .slice(0, 5)
     .map(bill => ({
-      id: parseInt(bill.id) || Math.floor(Math.random() * 1000), // Convert to number or generate random ID
+      id: typeof bill.id === 'string' ? parseInt(bill.id) || Math.floor(Math.random() * 1000) : bill.id,
       payee: bill.description,
       amount: bill.amount,
       dueDate: new Date(bill.dueDate).toLocaleDateString('fr-MA'),
@@ -62,7 +62,7 @@ const Payments = () => {
     .filter(bill => bill.status === 'paid')
     .slice(0, 5)
     .map(bill => ({
-      id: parseInt(bill.id) || Math.floor(Math.random() * 1000), // Convert to number or generate random ID
+      id: typeof bill.id === 'string' ? parseInt(bill.id) || Math.floor(Math.random() * 1000) : bill.id,
       payee: bill.description,
       amount: bill.amount,
       date: bill.paymentDate ? new Date(bill.paymentDate).toLocaleDateString('fr-MA') : '-',
@@ -97,7 +97,10 @@ const Payments = () => {
                     <CardDescription>Remplissez le formulaire pour effectuer un paiement</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <PaymentForm accounts={accounts} />
+                    <NewPaymentForm 
+                      accounts={accounts} 
+                      isLoadingAccounts={isLoadingAccounts}
+                    />
                   </CardContent>
                 </Card>
                 
