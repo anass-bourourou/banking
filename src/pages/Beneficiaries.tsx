@@ -154,13 +154,14 @@ const Beneficiaries = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="rib">RIB *</Label>  {/* Changed from IBAN to RIB */}
+                  {/* Changed from IBAN to RIB */}
+                  <Label htmlFor="rib">RIB *</Label>
                   <Input
-                    id="rib"  {/* Changed from iban to rib */}
-                    name="rib"  {/* Changed from iban to rib */}
+                    id="rib"
+                    name="rib"
                     className="bank-input"
-                    placeholder="Ex: 190 810 00024 00012345678 90"  {/* Updated placeholder to match RIB format */}
-                    value={newBeneficiary.rib}  {/* Changed from iban to rib */}
+                    placeholder="Ex: 190 810 00024 00012345678 90"
+                    value={newBeneficiary.rib}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -238,8 +239,9 @@ const Beneficiaries = () => {
                   
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-bank-gray">RIB: </span>  {/* Changed from IBAN to RIB */}
-                      <span className="font-medium">{beneficiary.rib}</span>  {/* Changed from iban to rib */}
+                      {/* Changed from IBAN to RIB */}
+                      <span className="text-bank-gray">RIB: </span>
+                      <span className="font-medium">{beneficiary.rib}</span>
                     </div>
                     <div>
                       <span className="text-bank-gray">BIC: </span>
