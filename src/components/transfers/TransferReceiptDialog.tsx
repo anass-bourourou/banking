@@ -76,7 +76,7 @@ INFORMATIONS EXPÉDITEUR
 ----------------------------------------
 ${accountInfo ? `Compte: ${accountInfo.name}
 Numéro: ${accountInfo.number}
-IBAN: ${accountInfo.iban || 'Non spécifié'}` : 'Informations non disponibles'}
+RIB: ${accountInfo.rib || 'Non spécifié'}` : 'Informations non disponibles'}  {/* Changed from IBAN to RIB */}
 
 INFORMATIONS BÉNÉFICIAIRE
 ----------------------------------------

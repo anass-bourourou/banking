@@ -183,6 +183,10 @@ const InstantTransferForm: React.FC<InstantTransferFormProps> = ({
                   <span className="font-medium">{getSelectedBeneficiary()?.name}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-bank-gray">RIB :</span>  {/* Changed from IBAN to RIB */}
+                  <span className="font-medium">{getSelectedBeneficiary()?.rib}</span>  {/* Changed from iban to rib */}
+                </div>
+                <div className="flex justify-between">
                   <span className="text-bank-gray">Montant :</span>
                   <span className="font-medium">{parseFloat(transferAmount).toLocaleString('fr-MA')} MAD</span>
                 </div>

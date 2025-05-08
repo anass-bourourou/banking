@@ -198,8 +198,8 @@ const NewTransferTab: React.FC<NewTransferTabProps> = ({
                 </div>
                 
                 <div className="flex justify-between">
-                  <span className="text-bank-gray">IBAN :</span>
-                  <span className="font-medium">{getSelectedBeneficiary()?.iban}</span>
+                  <span className="text-bank-gray">RIB :</span>  {/* Changed from IBAN to RIB */}
+                  <span className="font-medium">{getSelectedBeneficiary()?.rib}</span>  {/* Changed from iban to rib */}
                 </div>
                 
                 <div className="flex justify-between">

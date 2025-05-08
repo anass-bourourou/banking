@@ -10,7 +10,7 @@ import { toast } from 'sonner';
 interface Beneficiary {
   id: string;
   name: string;
-  iban: string;
+  rib: string;  // Changed from iban to rib
   bic: string;
   email?: string;
   phone?: string;
@@ -21,7 +21,7 @@ const Beneficiaries = () => {
   const [showAddForm, setShowAddForm] = useState(false);
   const [newBeneficiary, setNewBeneficiary] = useState<Partial<Beneficiary>>({
     name: '',
-    iban: '',
+    rib: '',  // Changed from iban to rib
     bic: '',
     email: '',
     phone: '',
@@ -31,7 +31,7 @@ const Beneficiaries = () => {
     {
       id: '1',
       name: 'Fatima Alaoui',
-      iban: 'MA64 0163 0000 0100 0000 0000 0150',
+      rib: '190 810 00024 00012345678 90',  // Updated to RIB format
       bic: 'BCMAMADC',
       email: 'fatima.alaoui@email.ma',
       phone: '06 12 34 56 78',
@@ -39,14 +39,14 @@ const Beneficiaries = () => {
     {
       id: '2',
       name: 'Youssef Bensaid',
-      iban: 'MA64 0099 0000 0100 0000 0000 0321',
+      rib: '181 810 00012 00001234567 45',  // Updated to RIB format
       bic: 'ATTIMADC',
       email: 'youssef.bensaid@email.ma',
     },
     {
       id: '3',
       name: 'Salma Benali',
-      iban: 'MA64 0128 0000 0100 0000 0000 0456',
+      rib: '225 810 00065 00009876543 22',  // Updated to RIB format
       bic: 'BPMAMAMC',
       phone: '07 65 43 21 09',
     },
@@ -62,7 +62,7 @@ const Beneficiaries = () => {
   };
 
   const handleAddBeneficiary = () => {
-    if (!newBeneficiary.name || !newBeneficiary.iban || !newBeneficiary.bic) {
+    if (!newBeneficiary.name || !newBeneficiary.rib || !newBeneficiary.bic) {  // Changed iban to rib
       toast.error('Informations incomplètes', {
         description: 'Veuillez remplir tous les champs obligatoires',
       });
@@ -75,7 +75,7 @@ const Beneficiaries = () => {
     setBeneficiaries(prev => [...prev, beneficiary]);
     setNewBeneficiary({
       name: '',
-      iban: '',
+      rib: '',  // Changed from iban to rib
       bic: '',
       email: '',
       phone: '',
@@ -98,7 +98,7 @@ const Beneficiaries = () => {
 
   const filteredBeneficiaries = beneficiaries.filter(b => 
     b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.iban.toLowerCase().replace(/\s/g, '').includes(searchTerm.toLowerCase().replace(/\s/g, ''))
+    b.rib.toLowerCase().replace(/\s/g, '').includes(searchTerm.toLowerCase().replace(/\s/g, ''))  // Changed iban to rib
   );
 
   return (
@@ -154,13 +154,13 @@ const Beneficiaries = () => {
                 </div>
                 
                 <div className="space-y-2">
-                  <Label htmlFor="iban">IBAN *</Label>
+                  <Label htmlFor="rib">RIB *</Label>  {/* Changed from IBAN to RIB */}
                   <Input
-                    id="iban"
-                    name="iban"
+                    id="rib"  {/* Changed from iban to rib */}
+                    name="rib"  {/* Changed from iban to rib */}
                     className="bank-input"
-                    placeholder="Ex: MA64 0163 0000 0100 0000 0000 0150"
-                    value={newBeneficiary.iban}
+                    placeholder="Ex: 190 810 00024 00012345678 90"  {/* Updated placeholder to match RIB format */}
+                    value={newBeneficiary.rib}  {/* Changed from iban to rib */}
                     onChange={handleInputChange}
                   />
                 </div>
@@ -238,8 +238,8 @@ const Beneficiaries = () => {
                   
                   <div className="space-y-2 text-sm">
                     <div>
-                      <span className="text-bank-gray">IBAN: </span>
-                      <span className="font-medium">{beneficiary.iban}</span>
+                      <span className="text-bank-gray">RIB: </span>  {/* Changed from IBAN to RIB */}
+                      <span className="font-medium">{beneficiary.rib}</span>  {/* Changed from iban to rib */}
                     </div>
                     <div>
                       <span className="text-bank-gray">BIC: </span>

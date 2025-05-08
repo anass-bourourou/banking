@@ -1,4 +1,3 @@
-
 import { BaseService } from './BaseService';
 import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
@@ -7,7 +6,7 @@ import { ENDPOINTS } from '@/config/api.config';
 export interface Beneficiary {
   id: string;
   name: string;
-  iban: string;
+  rib: string;  // Changed from iban to rib
   bic?: string;
   email?: string;
   phone?: string;
