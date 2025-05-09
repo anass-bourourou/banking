@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableHeader, TableRow, TableHead, TableBody, TableCell } from '@/components/ui/table';
@@ -9,7 +8,7 @@ import { ScannedDocument } from '@/services/ScanService';
 import { format } from 'date-fns';
 import { fr } from 'date-fns/locale';
 import { toast } from 'sonner';
-import { Eye, Download, Trash2, Search, Clock, Check, X, Loader2, Calendar, History } from 'lucide-react';
+import { Eye, Download, Trash2, Search, Clock, Check, X, Loader2, Calendar, History, FileScan } from 'lucide-react';
 import { 
   AlertDialog,
   AlertDialogAction,
