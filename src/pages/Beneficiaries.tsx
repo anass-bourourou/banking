@@ -99,6 +99,7 @@ const Beneficiaries = () => {
         },
         cancel: {
           label: "Annuler",
+          onClick: () => {}, // Add an empty onClick handler to fix the type error
         },
         duration: 5000,
       }
