@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +9,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
 import { AuthService } from '@/services/AuthService';
+import { BankLogo } from '@/components/auth/BankLogo';
 
 const Login = () => {
   const [username, setUsername] = useState('');
@@ -63,10 +63,7 @@ const Login = () => {
 
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-bank-primary/10 to-white p-4">
-      <div className="mb-8 text-center">
-        <h1 className="text-3xl font-bold text-bank-primary">AnassBank</h1>
-        <p className="text-bank-gray">Votre banque en ligne sécurisée</p>
-      </div>
+      <BankLogo />
       
       {/* Affichage de l'erreur en haut au milieu */}
       {error && (

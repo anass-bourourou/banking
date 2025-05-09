@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useLocation, Link } from 'react-router-dom';
 import { cn } from '@/lib/utils';
@@ -100,8 +99,17 @@ const Sidebar: React.FC<SidebarProps> = () => {
     <div className="flex h-full w-64 flex-col border-r border-bank-gray-light bg-white py-4">
       <div className="px-6">
         <Link to="/dashboard" className="mb-6 flex items-center space-x-2">
-          <img src="/logo.svg" alt="Bank Logo" className="h-8" />
-          <span className="font-bold">Bank</span>
+          <img 
+            src="/cih-bank-logo.png" 
+            alt="CIH Bank" 
+            className="h-8" 
+            onError={(e) => {
+              const target = e.target as HTMLImageElement;
+              target.onerror = null;
+              target.src = "/placeholder.svg";
+            }}
+          />
+          <span className="font-bold text-bank-primary">CIH Bank</span>
         </Link>
       </div>
       
