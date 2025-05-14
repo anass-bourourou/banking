@@ -29,8 +29,8 @@ const Login = () => {
       
       setUser(user);
       
-      toast({
-        title: 'Connexion réussie',
+      // Using sonner toast correctly
+      toast.success('Connexion réussie', {
         description: 'Bienvenue dans votre espace bancaire',
       });
       
@@ -49,10 +49,9 @@ const Login = () => {
       
       setError(errorMessage);
       
-      toast({
-        title: 'Échec de la connexion',
+      // Using sonner toast correctly for error
+      toast.error('Échec de la connexion', {
         description: errorMessage,
-        variant: 'destructive',
       });
     } finally {
       setIsLoading(false);
@@ -98,8 +97,8 @@ const Login = () => {
                   className="text-sm text-bank-primary hover:underline"
                   onClick={(e) => {
                     e.preventDefault();
-                    toast({
-                      title: "Réinitialisation du mot de passe",
+                    // Using sonner toast correctly
+                    toast.info("Réinitialisation du mot de passe", {
                       description: "Un email a été envoyé avec les instructions",
                     });
                   }}
