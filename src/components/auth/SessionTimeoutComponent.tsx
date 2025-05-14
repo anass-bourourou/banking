@@ -15,7 +15,15 @@ const SessionTimeoutComponent: React.FC = () => {
 
     const resetTimer = () => {
       setLastActivity(Date.now());
+      // Sauvegarde du timestamp d'activité dans localStorage
+      localStorage.setItem('lastActivityTimestamp', Date.now().toString());
     };
+
+    // Initialisation avec une valeur stockée si elle existe
+    const storedTimestamp = localStorage.getItem('lastActivityTimestamp');
+    if (storedTimestamp) {
+      setLastActivity(parseInt(storedTimestamp, 10));
+    }
 
     const events = ['mousedown', 'mousemove', 'keypress', 'scroll', 'touchstart'];
     events.forEach(event => {
@@ -24,7 +32,10 @@ const SessionTimeoutComponent: React.FC = () => {
 
     const intervalId = setInterval(() => {
       const now = Date.now();
-      if (now - lastActivity > timeoutDuration) {
+      const storedActivity = localStorage.getItem('lastActivityTimestamp');
+      const lastActivityTime = storedActivity ? parseInt(storedActivity, 10) : lastActivity;
+      
+      if (now - lastActivityTime > timeoutDuration) {
         logout();
         navigate('/login');
         toast.error("Session expirée", {

@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -8,7 +8,15 @@ type ProtectedRouteProps = {
 };
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, checkAuthStatus } = useAuth();
+
+  // Vérifier l'authentification à chaque rendu du composant
+  useEffect(() => {
+    // Ne vérifie que si on n'est pas déjà en train de charger
+    if (!isLoading) {
+      checkAuthStatus();
+    }
+  }, [checkAuthStatus, isLoading]);
 
   // Show loading state or spinner if auth is still being checked
   if (isLoading) {
