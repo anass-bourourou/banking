@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -5,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { AlertCircle } from 'lucide-react';
 import { AuthService } from '@/services/AuthService';
@@ -18,7 +18,6 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
   const { setUser } = useAuth();
-  const { toast } = useToast();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,7 +32,6 @@ const Login = () => {
       toast({
         title: 'Connexion réussie',
         description: 'Bienvenue dans votre espace bancaire',
-        variant: 'default',
       });
       
       navigate('/');
@@ -65,7 +63,6 @@ const Login = () => {
     <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-bank-primary/10 to-white p-4">
       <BankLogo />
       
-      {/* Affichage de l'erreur en haut au milieu */}
       {error && (
         <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md flex items-center justify-center rounded-md border border-red-200 bg-red-50 p-4 text-sm text-red-600 shadow-md">
           <AlertCircle className="mr-2 h-5 w-5 flex-shrink-0" />
