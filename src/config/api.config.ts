@@ -1,4 +1,3 @@
-
 /**
  * API Configuration
  * 
@@ -50,6 +49,10 @@ export const ENDPOINTS = {
   STATEMENTS: {
     LIST: '/statements',
     DOWNLOAD: (id: string | number) => `/statements/${id}/download`,
+  },
+  SCAN: {
+    UPLOAD: '/api/scan/upload',
+    HISTORY: '/api/scan/history'
   },
 };
 
