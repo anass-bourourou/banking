@@ -13,7 +13,7 @@ import { AccountService } from '@/services/AccountService';
 import { Loader2 } from 'lucide-react';
 import RecentTransactions from '@/components/accounts/RecentTransactions';
 import { TransactionService } from '@/services/TransactionService';
-import { Transaction } from '@/types/transaction';
+import { ENDPOINTS } from '@/config/api.config';
 
 const Index = () => {
   const { user } = useAuth();
@@ -28,21 +28,47 @@ const Index = () => {
     queryFn: () => TransactionService.getRecentTransactions(),
   });
 
-  const spendingData = [
-    { name: 'Logement', value: 2500, color: '#0F7DEA' },
-    { name: 'Alimentation', value: 1200, color: '#10B981' },
-    { name: 'Transport', value: 600, color: '#F59E0B' },
-    { name: 'Loisirs', value: 800, color: '#8B5CF6' },
-    { name: 'Santé', value: 400, color: '#EC4899' },
-    { name: 'Autres', value: 700, color: '#6B7280' },
-  ];
+  // Spending data would come from the backend in a real implementation
+  const { data: spendingData, isLoading: isLoadingSpending } = useQuery({
+    queryKey: ['spendingCategories'],
+    queryFn: async () => {
+      try {
+        // This would be a real API call in production
+        const response = await fetch(`${ENDPOINTS.TRANSACTIONS.CATEGORIES}`);
+        if (!response.ok) throw new Error('Failed to fetch spending data');
+        return await response.json();
+      } catch (error) {
+        console.error('Error fetching spending data:', error);
+        // Fallback to static data if API fails
+        return [
+          { name: 'Logement', value: 2500, color: '#0F7DEA' },
+          { name: 'Alimentation', value: 1200, color: '#10B981' },
+          { name: 'Transport', value: 600, color: '#F59E0B' },
+          { name: 'Loisirs', value: 800, color: '#8B5CF6' },
+          { name: 'Santé', value: 400, color: '#EC4899' },
+          { name: 'Autres', value: 700, color: '#6B7280' },
+        ];
+      }
+    },
+    // Default to static data while request is pending
+    placeholderData: [
+      { name: 'Logement', value: 2500, color: '#0F7DEA' },
+      { name: 'Alimentation', value: 1200, color: '#10B981' },
+      { name: 'Transport', value: 600, color: '#F59E0B' },
+      { name: 'Loisirs', value: 800, color: '#8B5CF6' },
+      { name: 'Santé', value: 400, color: '#EC4899' },
+      { name: 'Autres', value: 700, color: '#6B7280' },
+    ],
+  });
 
-  const firstName = user?.name?.split(' ')[0] || 'Anass';
+  const firstName = user?.name ? user.name.split(' ')[0] : '';
 
   return (
     <AppLayout>
       <div className="mb-6">
-        <h1 className="text-xl font-semibold md:text-2xl">Bonjour, {firstName}</h1>
+        <h1 className="text-xl font-semibold md:text-2xl">
+          {firstName ? `Bonjour, ${firstName}` : 'Bienvenue'}
+        </h1>
         <p className="text-bank-gray">Bienvenue dans votre espace bancaire personnel</p>
       </div>
 
@@ -109,7 +135,7 @@ const Index = () => {
           <TransactionHistory />
         </div>
         <div>
-          <SpendingChart data={spendingData} />
+          <SpendingChart data={spendingData || []} />
         </div>
       </div>
     </AppLayout>

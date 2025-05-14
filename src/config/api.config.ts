@@ -1,3 +1,4 @@
+
 /**
  * API Configuration
  * 
@@ -29,30 +30,52 @@ export const ENDPOINTS = {
   ACCOUNTS: {
     LIST: '/accounts',
     DETAIL: (id: string | number) => `/accounts/${id}`,
+    BALANCE: '/accounts/balance',
+    STATEMENTS: (id: string | number) => `/accounts/${id}/statements`,
   },
   TRANSACTIONS: {
     LIST: '/transactions',
     DETAIL: (id: string | number) => `/transactions/${id}`,
     RECENT: '/transactions/recent',
     FILTER: '/transactions/filter',
+    CATEGORIES: '/transactions/categories',
+    STATISTICS: '/transactions/statistics',
   },
   BENEFICIARIES: {
     LIST: '/beneficiaries',
     ADD: '/beneficiaries',
     DETAIL: (id: string | number) => `/beneficiaries/${id}`,
+    DELETE: (id: string | number) => `/beneficiaries/${id}`,
   },
   TRANSFERS: {
     CREATE: '/transfers',
     MASS: '/transfers/mass',
     RECURRING: '/transfers/recurring',
+    HISTORY: '/transfers/history',
+    STATUS: (id: string | number) => `/transfers/${id}/status`,
   },
   STATEMENTS: {
     LIST: '/statements',
     DOWNLOAD: (id: string | number) => `/statements/${id}/download`,
+    GENERATE: '/statements/generate',
   },
   SCAN: {
-    UPLOAD: '/api/scan/upload',
-    HISTORY: '/api/scan/history'
+    UPLOAD: '/scan/upload',
+    HISTORY: '/scan/history',
+    STATUS: (id: string | number) => `/scan/${id}/status`,
+    DETAIL: (id: string | number) => `/scan/${id}`,
+  },
+  USER: {
+    PROFILE: '/user/profile',
+    UPDATE: '/user/update',
+    PREFERENCES: '/user/preferences',
+    NOTIFICATIONS: '/user/notifications',
+  },
+  BILLS: {
+    LIST: '/bills',
+    PAY: '/bills/pay',
+    RECURRING: '/bills/recurring',
+    HISTORY: '/bills/history',
   },
 };
 

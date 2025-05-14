@@ -2,7 +2,7 @@
 import { fetchWithAuth } from './api';
 import { User, LoginCredentials, RegistrationData } from './auth/types';
 import { ENDPOINTS } from '@/config/api.config';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 
 export type { User, LoginCredentials, RegistrationData } from './auth/types';
 
