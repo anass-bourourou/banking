@@ -12,7 +12,7 @@ export interface Complaint {
   category: string;
   priority: 'low' | 'medium' | 'high';
   responses?: ComplaintResponse[];
-  // Add fields that match the ones used in the components
+  // Adding these fields to match what's used in components
   title?: string;
   created_at?: string;
   reference_id?: string;
