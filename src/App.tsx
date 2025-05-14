@@ -25,7 +25,6 @@ import Complaints from '@/pages/Complaints';
 import Notifications from '@/pages/Notifications';
 import Statements from '@/pages/Statements';
 import Payments from '@/pages/Payments';
-import Scan from '@/pages/Scan';
 import SessionTimeoutComponent from '@/components/auth/SessionTimeoutComponent';
 
 import './App.css';
@@ -59,7 +58,6 @@ function App() {
               <Route path="/payments" element={<ProtectedRoute><Payments /></ProtectedRoute>} />
               <Route path="/statements" element={<ProtectedRoute><Statements /></ProtectedRoute>} />
               <Route path="/e-documents" element={<ProtectedRoute><EDocuments /></ProtectedRoute>} />
-              <Route path="/scan" element={<ProtectedRoute><Scan /></ProtectedRoute>} />
               <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
               <Route path="/moroccan-bills" element={<ProtectedRoute><MoroccanBills /></ProtectedRoute>} />
               <Route path="/receipts" element={<ProtectedRoute><Receipts /></ProtectedRoute>} />
