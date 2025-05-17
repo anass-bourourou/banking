@@ -4,45 +4,46 @@ import AppLayout from '@/components/layout/AppLayout';
 import StatementsList from '@/components/statements/StatementsList';
 import { toast } from 'sonner';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { BankStatement } from '@/components/statements/StatementsList';
 
 const Statements = () => {
   // Données statiques pour les relevés
-  const demoStatements = [
+  const demoStatements: BankStatement[] = [
     {
       id: '1',
-      accountId: '123456789',
+      accountId: 123456789,
+      accountName: 'Compte Courant',
       period: 'Avril 2025',
       date: '2025-05-01',
-      fileSize: '1.2 MB',
-      downloadUrl: '#'
+      fileUrl: '#',
     },
     {
       id: '2',
-      accountId: '123456789',
+      accountId: 123456789,
+      accountName: 'Compte Courant',
       period: 'Mars 2025',
       date: '2025-04-01',
-      fileSize: '1.1 MB',
-      downloadUrl: '#'
+      fileUrl: '#',
     },
     {
       id: '3',
-      accountId: '123456789',
+      accountId: 123456789,
+      accountName: 'Compte Courant',
       period: 'Février 2025',
       date: '2025-03-01',
-      fileSize: '980 KB',
-      downloadUrl: '#'
+      fileUrl: '#',
     }
   ];
 
-  const handleViewStatement = (statementId: string) => {
+  const handleViewStatement = (statement: BankStatement) => {
     toast.info('Visualisation du relevé', {
-      description: `Le relevé #${statementId} s'ouvre dans un nouvel onglet.`
+      description: `Le relevé #${statement.id} s'ouvre dans un nouvel onglet.`
     });
   };
 
-  const handleDownloadStatement = (statementId: string) => {
+  const handleDownloadStatement = (statement: BankStatement) => {
     toast.success('Téléchargement démarré', {
-      description: `Le relevé #${statementId} est en cours de téléchargement.`
+      description: `Le relevé #${statement.id} est en cours de téléchargement.`
     });
   };
 
