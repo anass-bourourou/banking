@@ -3,8 +3,6 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Eye, EyeOff, CreditCard } from "lucide-react";
-import { useQuery } from '@tanstack/react-query';
-import { fetchWithAuth } from '@/services/api';
 
 // Define card interface
 interface BankCard {
@@ -20,23 +18,27 @@ interface BankCard {
 const CardDisplay: React.FC = () => {
   const [showCardDetails, setShowCardDetails] = useState(false);
   
-  // Fetch cards from API
-  const { data: cards = [], isLoading } = useQuery({
-    queryKey: ['bank-cards'],
-    queryFn: async (): Promise<BankCard[]> => {
-      try {
-        const response = await fetchWithAuth('/cards');
-        if (!response.ok) {
-          throw new Error('Failed to fetch cards');
-        }
-        const data = await response.json();
-        return data;
-      } catch (error) {
-        console.error('Error fetching cards:', error);
-        return [];
-      }
+  // Static card data
+  const cards: BankCard[] = [
+    {
+      id: "1",
+      number: "4539123456789012",
+      holder: "CLIENT DEMO",
+      expiry: "05/28",
+      type: "visa",
+      status: "active",
+      cvv: "123"
+    },
+    {
+      id: "2",
+      number: "5236123456789010",
+      holder: "CLIENT DEMO",
+      expiry: "09/26",
+      type: "mastercard",
+      status: "active",
+      cvv: "456"
     }
-  });
+  ];
   
   // Mask card number except last 4 digits
   const formatCardNumber = (number: string, revealed: boolean) => {
@@ -56,11 +58,7 @@ const CardDisplay: React.FC = () => {
   
   return (
     <div className="space-y-6">
-      {isLoading ? (
-        <div className="flex h-40 w-full items-center justify-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-b-2 border-bank-primary"></div>
-        </div>
-      ) : cards.length > 0 ? (
+      {cards.length > 0 ? (
         cards.map((card) => (
           <Card key={card.id} className="overflow-hidden">
             <div className="bg-gradient-to-r from-bank-primary to-bank-primary-dark p-6 text-white">

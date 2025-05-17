@@ -1,8 +1,8 @@
 
 import React from 'react';
-import { FileText, Download, Eye } from 'lucide-react';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Eye, Download } from 'lucide-react';
 
 export interface BankStatement {
   id: string;
@@ -10,7 +10,7 @@ export interface BankStatement {
   accountName: string;
   period: string;
   date: string;
-  fileUrl?: string;
+  fileUrl: string;
 }
 
 interface StatementsListProps {
@@ -19,73 +19,57 @@ interface StatementsListProps {
   onDownload: (statement: BankStatement) => void;
 }
 
-const StatementsList: React.FC<StatementsListProps> = ({
-  statements,
-  onView,
-  onDownload
-}) => {
+const StatementsList: React.FC<StatementsListProps> = ({ statements, onView, onDownload }) => {
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('fr-FR', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric'
+    });
+  };
+
   return (
-    <div className="space-y-4">
-      {statements.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-8 text-center">
-          <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-bank-gray-light">
-            <FileText size={24} className="text-bank-gray" />
-          </div>
-          <h3 className="mb-2 text-lg font-medium">Aucun relevé disponible</h3>
-          <p className="text-bank-gray">
-            Vous n'avez pas encore de relevés bancaires
-          </p>
-        </div>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Période</TableHead>
-                <TableHead>Compte</TableHead>
-                <TableHead>Date d'émission</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+    <div className="w-full overflow-auto">
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Période</TableHead>
+            <TableHead>Compte</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="text-right">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {statements.length === 0 ? (
+            <TableRow>
+              <TableCell colSpan={4} className="h-24 text-center">
+                Aucun relevé disponible
+              </TableCell>
+            </TableRow>
+          ) : (
+            statements.map((statement) => (
+              <TableRow key={statement.id}>
+                <TableCell className="font-medium">{statement.period}</TableCell>
+                <TableCell>{statement.accountName}</TableCell>
+                <TableCell>{formatDate(statement.date)}</TableCell>
+                <TableCell className="text-right">
+                  <div className="flex justify-end space-x-2">
+                    <Button variant="outline" size="sm" onClick={() => onView(statement)}>
+                      <Eye className="mr-2 h-4 w-4" />
+                      Consulter
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => onDownload(statement)}>
+                      <Download className="mr-2 h-4 w-4" />
+                      Télécharger
+                    </Button>
+                  </div>
+                </TableCell>
               </TableRow>
-            </TableHeader>
-            <TableBody>
-              {statements.map((statement) => (
-                <TableRow key={statement.id}>
-                  <TableCell className="font-medium">
-                    <div className="flex items-center space-x-2">
-                      <FileText className="h-5 w-5 text-bank-primary" />
-                      <span>{statement.period}</span>
-                    </div>
-                  </TableCell>
-                  <TableCell>{statement.accountName}</TableCell>
-                  <TableCell>{statement.date}</TableCell>
-                  <TableCell className="text-right">
-                    <div className="flex items-center justify-end space-x-2">
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex items-center space-x-1"
-                        onClick={() => onView(statement)}
-                      >
-                        <Eye className="h-4 w-4" />
-                        <span>Voir</span>
-                      </Button>
-                      <Button 
-                        variant="outline" 
-                        size="sm"
-                        className="flex items-center space-x-1"
-                        onClick={() => onDownload(statement)}
-                      >
-                        <Download className="h-4 w-4" />
-                        <span>Télécharger</span>
-                      </Button>
-                    </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+            ))
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 };

@@ -1,8 +1,6 @@
 
 import { BaseService } from './BaseService';
-import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
-import { ENDPOINTS } from '@/config/api.config';
 
 export interface Receipt {
   id: string;
@@ -17,23 +15,58 @@ export interface Receipt {
 }
 
 export class ReceiptService extends BaseService {
+  // Static receipts data
+  private static receipts: Receipt[] = [
+    {
+      id: "1",
+      title: "Facture d'électricité",
+      date: "15/05/2025",
+      amount: 325.60,
+      reference: "ELEC-2025-0512",
+      status: "paid",
+      type: "bill",
+      merchant: "CIM - Lydec",
+      fileUrl: "/receipts/elec-2025-0512.pdf"
+    },
+    {
+      id: "2",
+      title: "Taxe municipale",
+      date: "12/05/2025",
+      amount: 950.00,
+      reference: "TAXE-2025-0487",
+      status: "paid",
+      type: "tax",
+      merchant: "DGI",
+      fileUrl: "/receipts/taxe-2025-0487.pdf"
+    },
+    {
+      id: "3",
+      title: "Abonnement Internet",
+      date: "05/05/2025",
+      amount: 399.00,
+      reference: "INT-2025-1241",
+      status: "paid",
+      type: "subscription",
+      merchant: "Maroc Telecom",
+      fileUrl: "/receipts/int-2025-1241.pdf"
+    },
+    {
+      id: "4",
+      title: "Vignette Automobile",
+      date: "28/04/2025",
+      amount: 700.00,
+      reference: "VIG-2025-5647",
+      status: "paid",
+      type: "tax",
+      merchant: "DGI - Vignettes",
+      fileUrl: "/receipts/vig-2025-5647.pdf"
+    }
+  ];
+
   static async getReceipts(): Promise<Receipt[]> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth('/receipts');
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la récupération des reçus');
-      }
-      
-      const data = await response.json();
-      
-      if (Array.isArray(data)) {
-        return data as Receipt[];
-      }
-      
-      return [];
+      // Return static receipts
+      return [...this.receipts];
     } catch (error) {
       console.error('Error fetching receipts:', error);
       toast.error('Impossible de récupérer les reçus');
@@ -43,32 +76,15 @@ export class ReceiptService extends BaseService {
 
   static async downloadReceipt(receiptId: string): Promise<string> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(`/receipts/${receiptId}/download`, {
-        method: 'GET'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `Reçu-${receiptId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      // Clean up the URL object
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+      // Simulate download delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
       
       toast.success('Téléchargement du reçu démarré', {
         description: 'Le téléchargement devrait commencer sous peu'
       });
       
-      return url;
+      // Return dummy URL
+      return `data:application/pdf;base64,JVBERi0xLjMKJcTl8uXrp/Og0MTGCjQgMCBvYmoKPDwgL0xlbmd0aCA1IDAgUiAvRml...`;
     } catch (error) {
       console.error('Error downloading receipt:', error);
       toast.error('Impossible de télécharger le reçu');

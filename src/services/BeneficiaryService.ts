@@ -1,5 +1,5 @@
+
 import { BaseService } from './BaseService';
-import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
 import { ENDPOINTS } from '@/config/api.config';
 
@@ -16,23 +16,49 @@ export interface Beneficiary {
 }
 
 export class BeneficiaryService extends BaseService {
+  // Static beneficiaries data
+  private static beneficiaries: Beneficiary[] = [
+    {
+      id: "1",
+      name: "Mohammed Alaoui",
+      rib: "011810000000123456789012",
+      bic: "BCMAMAMC",
+      email: "mohammed.alaoui@example.com",
+      phone: "+212 661234567",
+      bank_name: "CIH Bank",
+      favorite: true
+    },
+    {
+      id: "2",
+      name: "Fatima Benali",
+      rib: "011810000000987654321098",
+      bic: "BCMAMAMC",
+      email: "fatima.benali@example.com",
+      bank_name: "CIH Bank",
+      favorite: false
+    },
+    {
+      id: "3",
+      name: "Ahmed Tazi",
+      rib: "022810000000567890123456",
+      bic: "BMCEMAMCXXX",
+      bank_name: "BMCE Bank",
+      favorite: true
+    },
+    {
+      id: "4",
+      name: "Nadia Chraibi",
+      rib: "033810000000345678901234",
+      bic: "SGMBMAMC",
+      bank_name: "Société Générale",
+      favorite: false
+    }
+  ];
+
   static async getBeneficiaries(): Promise<Beneficiary[]> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(ENDPOINTS.BENEFICIARIES.LIST);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la récupération des bénéficiaires');
-      }
-      
-      const data = await response.json();
-      
-      if (Array.isArray(data)) {
-        return data as Beneficiary[];
-      }
-      
-      return []; // Return empty array if no beneficiaries
+      // Return static beneficiaries data
+      return [...this.beneficiaries];
     } catch (error) {
       console.error('Error fetching beneficiaries:', error);
       toast.error('Impossible de récupérer les bénéficiaires');
@@ -42,24 +68,21 @@ export class BeneficiaryService extends BaseService {
 
   static async addBeneficiary(beneficiary: Omit<Beneficiary, 'id' | 'favorite'>): Promise<Beneficiary> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(ENDPOINTS.BENEFICIARIES.ADD, {
-        method: 'POST',
-        body: JSON.stringify(beneficiary)
-      });
+      // Create new beneficiary with ID and favorite false
+      const newBeneficiary: Beneficiary = {
+        ...beneficiary,
+        id: (this.beneficiaries.length + 1).toString(),
+        favorite: false
+      };
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de l\'ajout du bénéficiaire');
-      }
-      
-      const data = await response.json();
+      // Add to static beneficiaries
+      this.beneficiaries.push(newBeneficiary);
       
       toast.success('Bénéficiaire ajouté avec succès', {
         description: `${beneficiary.name} a été ajouté à vos bénéficiaires`
       });
       
-      return data as Beneficiary;
+      return newBeneficiary;
     } catch (error) {
       console.error('Error adding beneficiary:', error);
       toast.error('Impossible d\'ajouter le bénéficiaire');
@@ -69,27 +92,24 @@ export class BeneficiaryService extends BaseService {
 
   static async updateBeneficiary(id: string, updates: Partial<Beneficiary>): Promise<Beneficiary> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(`${ENDPOINTS.BENEFICIARIES.DETAIL(id)}`, {
-        method: 'PATCH',
-        body: JSON.stringify(updates)
+      // Find beneficiary
+      const index = this.beneficiaries.findIndex(b => b.id === id);
+      
+      if (index === -1) {
+        throw new Error('Bénéficiaire non trouvé');
+      }
+      
+      // Update beneficiary
+      this.beneficiaries[index] = {
+        ...this.beneficiaries[index],
+        ...updates
+      };
+      
+      toast.success('Bénéficiaire mis à jour', {
+        description: `Les informations de ${this.beneficiaries[index].name} ont été mises à jour`
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la mise à jour du bénéficiaire');
-      }
-      
-      const data = await response.json();
-      
-      if (data && 'id' in data) {
-        toast.success('Bénéficiaire mis à jour', {
-          description: `Les informations de ${data.name} ont été mises à jour`
-        });
-        return data as Beneficiary;
-      }
-      
-      throw new Error('Format de réponse inattendu');
+      return this.beneficiaries[index];
     } catch (error) {
       console.error('Error updating beneficiary:', error);
       toast.error('Impossible de mettre à jour le bénéficiaire');
@@ -99,15 +119,15 @@ export class BeneficiaryService extends BaseService {
 
   static async deleteBeneficiary(id: string): Promise<void> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(`${ENDPOINTS.BENEFICIARIES.DETAIL(id)}`, {
-        method: 'DELETE'
-      });
+      // Find beneficiary
+      const index = this.beneficiaries.findIndex(b => b.id === id);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la suppression du bénéficiaire');
+      if (index === -1) {
+        throw new Error('Bénéficiaire non trouvé');
       }
+      
+      // Remove from array
+      this.beneficiaries.splice(index, 1);
       
       toast.success('Bénéficiaire supprimé', {
         description: 'Le bénéficiaire a été supprimé'
@@ -121,31 +141,25 @@ export class BeneficiaryService extends BaseService {
 
   static async toggleFavorite(id: string, isFavorite: boolean): Promise<Beneficiary> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(`${ENDPOINTS.BENEFICIARIES.DETAIL(id)}/favorite`, {
-        method: 'PUT',
-        body: JSON.stringify({ favorite: isFavorite })
+      // Find beneficiary
+      const index = this.beneficiaries.findIndex(b => b.id === id);
+      
+      if (index === -1) {
+        throw new Error('Bénéficiaire non trouvé');
+      }
+      
+      // Update favorite status
+      this.beneficiaries[index].favorite = isFavorite;
+      
+      const message = isFavorite 
+        ? `Le bénéficiaire a été ajouté aux favoris`
+        : `Le bénéficiaire a été retiré des favoris`;
+        
+      toast.success('Favoris mis à jour', {
+        description: message
       });
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la modification du statut de favori');
-      }
-      
-      const data = await response.json();
-      
-      if (data && 'id' in data) {
-        const message = isFavorite 
-          ? `Le bénéficiaire a été ajouté aux favoris`
-          : `Le bénéficiaire a été retiré des favoris`;
-          
-        toast.success('Favoris mis à jour', {
-          description: message
-        });
-        return data as Beneficiary;
-      }
-      
-      throw new Error('Format de réponse inattendu');
+      return this.beneficiaries[index];
     } catch (error) {
       console.error('Error toggling favorite status:', error);
       toast.error('Impossible de modifier le statut de favori');
@@ -155,21 +169,8 @@ export class BeneficiaryService extends BaseService {
 
   static async getFavoriteBeneficiaries(): Promise<Beneficiary[]> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(`${ENDPOINTS.BENEFICIARIES.LIST}/favorites`);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la récupération des favoris');
-      }
-      
-      const data = await response.json();
-      
-      if (Array.isArray(data)) {
-        return data as Beneficiary[];
-      }
-      
-      return [];
+      // Filter favorites
+      return this.beneficiaries.filter(b => b.favorite);
     } catch (error) {
       console.error('Error fetching favorite beneficiaries:', error);
       toast.error('Impossible de récupérer les bénéficiaires favoris');

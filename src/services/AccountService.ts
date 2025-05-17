@@ -1,6 +1,5 @@
 
 import { BaseService } from './BaseService';
-import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
 import { ENDPOINTS } from '@/config/api.config';
 
@@ -19,24 +18,52 @@ export interface Account {
 }
 
 export class AccountService extends BaseService {
+  // Static accounts data
+  private static accounts: Account[] = [
+    {
+      id: 1,
+      name: "Compte Courant",
+      number: "011 810 0000012345678901 23",
+      balance: 45780.25,
+      currency: "MAD",
+      history: [
+        { month: "Jan", amount: 42500 },
+        { month: "Fév", amount: 43200 },
+        { month: "Mar", amount: 41800 },
+        { month: "Avr", amount: 44500 },
+        { month: "Mai", amount: 45780.25 }
+      ],
+      phone_number: "+212 661234567",
+      email: "demo@cih.ma",
+      city: "Casablanca",
+      country: "Maroc",
+      address: "123 Avenue Hassan II"
+    },
+    {
+      id: 2,
+      name: "Compte Épargne",
+      number: "011 810 0000098765432101 45",
+      balance: 125350.75,
+      currency: "MAD",
+      history: [
+        { month: "Jan", amount: 120000 },
+        { month: "Fév", amount: 121500 },
+        { month: "Mar", amount: 122800 },
+        { month: "Avr", amount: 124100 },
+        { month: "Mai", amount: 125350.75 }
+      ],
+      phone_number: "+212 661234567",
+      email: "demo@cih.ma",
+      city: "Casablanca",
+      country: "Maroc",
+      address: "123 Avenue Hassan II"
+    }
+  ];
+
   static async getAccounts(): Promise<Account[]> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(ENDPOINTS.ACCOUNTS.LIST);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la récupération des comptes');
-      }
-      
-      const data = await response.json();
-      
-      if (Array.isArray(data)) {
-        return data as Account[];
-      }
-      
-      console.error('Unexpected response format:', data);
-      throw new Error('Format de réponse inattendu pour les comptes');
+      // Return static accounts data
+      return [...this.accounts];
     } catch (error) {
       console.error('Error fetching accounts:', error);
       toast.error('Impossible de récupérer les comptes');
@@ -46,19 +73,14 @@ export class AccountService extends BaseService {
 
   static async getAccountById(id: number): Promise<Account | null> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(ENDPOINTS.ACCOUNTS.DETAIL(id));
+      // Find account in static data
+      const account = this.accounts.find(acc => acc.id === id);
       
-      if (!response.ok) {
-        if (response.status === 404) {
-          return null;
-        }
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la récupération du compte');
+      if (!account) {
+        return null;
       }
       
-      const data = await response.json();
-      return data as Account;
+      return {...account};
     } catch (error) {
       console.error(`Error fetching account ${id}:`, error);
       toast.error('Impossible de récupérer les détails du compte');
@@ -68,15 +90,11 @@ export class AccountService extends BaseService {
 
   static async updateAccountBalance(accountId: number, data: { balance: number }): Promise<void> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(`${ENDPOINTS.ACCOUNTS.DETAIL(accountId)}/balance`, {
-        method: 'PUT',
-        body: JSON.stringify(data)
-      });
+      // Update account balance in static data
+      const accountIndex = this.accounts.findIndex(acc => acc.id === accountId);
       
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Erreur lors de la mise à jour du solde');
+      if (accountIndex !== -1) {
+        this.accounts[accountIndex].balance = data.balance;
       }
     } catch (error) {
       console.error(`Error updating account balance for ${accountId}:`, error);

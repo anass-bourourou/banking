@@ -1,6 +1,5 @@
 
 import { BaseService } from './BaseService';
-import { fetchWithAuth } from './api';
 import { toast } from 'sonner';
 
 export interface TransferReceipt {
@@ -19,17 +18,56 @@ export interface TransferReceipt {
 }
 
 export class TransferReceiptService extends BaseService {
+  // Static transfer receipts data
+  private static transferReceipts: TransferReceipt[] = [
+    {
+      id: "1",
+      transactionId: 1001,
+      amount: 2500.00,
+      recipientName: "Mohammed Alaoui",
+      recipientAccount: "011810000000123456789012",
+      date: "17/05/2025",
+      reference: "VIR-2025-1001",
+      status: "completed",
+      fromAccount: "Compte Courant",
+      description: "Remboursement",
+      fees: 0,
+      pdfUrl: "/receipts/vir-2025-1001.pdf"
+    },
+    {
+      id: "2",
+      transactionId: 1002,
+      amount: 1000.00,
+      recipientName: "Fatima Benali",
+      recipientAccount: "011810000000987654321098",
+      date: "15/05/2025",
+      reference: "VIR-2025-1002",
+      status: "completed",
+      fromAccount: "Compte Courant",
+      description: "Loyer Mai 2025",
+      fees: 0,
+      pdfUrl: "/receipts/vir-2025-1002.pdf"
+    },
+    {
+      id: "3",
+      transactionId: 1003,
+      amount: 5000.00,
+      recipientName: "Ahmed Tazi",
+      recipientAccount: "022810000000567890123456",
+      date: "10/05/2025",
+      reference: "VIR-2025-1003",
+      status: "completed",
+      fromAccount: "Compte Épargne",
+      description: "Transfert personnel",
+      fees: 0,
+      pdfUrl: "/receipts/vir-2025-1003.pdf"
+    }
+  ];
+
   static async getTransferReceipts(): Promise<TransferReceipt[]> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth('/transfers/receipts');
-      const data = await response.json();
-      
-      if (Array.isArray(data)) {
-        return data as TransferReceipt[];
-      }
-      
-      return [];
+      // Return static transfer receipts
+      return [...this.transferReceipts];
     } catch (error) {
       console.error('Error fetching transfer receipts:', error);
       toast.error('Impossible de récupérer les reçus de virement');
@@ -39,26 +77,12 @@ export class TransferReceiptService extends BaseService {
 
   static async downloadTransferReceipt(receiptId: string): Promise<void> {
     try {
-      // Use SpringBoot backend API
-      const response = await fetchWithAuth(`/transfers/receipts/${receiptId}/download`, {
-        method: 'GET'
+      // Simulate download delay
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      
+      toast.success('Reçu téléchargé', {
+        description: `Le reçu de virement a été téléchargé`
       });
-      
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `reçu_virement_${receiptId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      
-      // Clean up
-      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
     } catch (error) {
       console.error(`Error downloading transfer receipt ${receiptId}:`, error);
       toast.error('Impossible de télécharger le reçu');
