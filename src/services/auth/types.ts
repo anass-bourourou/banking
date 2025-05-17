@@ -8,6 +8,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  role?: string;
+  createdAt?: string;
+  profileImage?: string | null;
   address?: string;
   cin?: string;
   phone?: string;
