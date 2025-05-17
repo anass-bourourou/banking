@@ -1,6 +1,7 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { AuthService, User } from '@/services/AuthService';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -24,20 +25,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const currentUser = await AuthService.checkAuthStatus();
       if (currentUser) {
         setUser(currentUser);
-        // Après une connexion réussie ou une vérification d'authentification réussie
         localStorage.setItem('isAuthenticated', 'true');
       } else {
-        // Si aucun utilisateur n'est trouvé, mais que l'indicateur isAuthenticated est présent
-        // cela signifie probablement que le token est invalide ou expiré
         if (localStorage.getItem('isAuthenticated') === 'true') {
-          // Effacer l'indicateur
           localStorage.removeItem('isAuthenticated');
         }
         setUser(null);
       }
     } catch (error) {
       console.error('Authentication check failed:', error);
-      // Clear invalid auth state
       localStorage.removeItem('isAuthenticated');
       AuthService.logout();
       setUser(null);
@@ -57,17 +53,24 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const loggedInUser = await AuthService.login({ username, password });
       setUser(loggedInUser);
       localStorage.setItem('isAuthenticated', 'true');
+      localStorage.setItem('lastActivityTimestamp', Date.now().toString());
+      toast.success("Connexion réussie", {
+        description: `Bienvenue ${loggedInUser.name}`
+      });
     } catch (error) {
       console.error('Login failed:', error);
+      toast.error("Échec de la connexion", {
+        description: error instanceof Error ? error.message : "Identifiants incorrects"
+      });
       throw error;
     } finally {
       setIsLoading(false);
     }
   };
   
-  const handleLogout = async () => {
+  const handleLogout = () => {
     try {
-      await AuthService.logout();
+      AuthService.logout();
     } finally {
       setUser(null);
       localStorage.removeItem('isAuthenticated');

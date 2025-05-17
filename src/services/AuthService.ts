@@ -1,62 +1,56 @@
 
-import { fetchWithAuth } from './api';
 import { User, LoginCredentials, RegistrationData } from './auth/types';
-import { ENDPOINTS } from '@/config/api.config';
-import { toast } from 'sonner';
 
 export type { User, LoginCredentials, RegistrationData } from './auth/types';
+
+// Demo user account
+const demoUser: User = {
+  id: '1',
+  name: 'Client Démo',
+  email: 'demo@bankwise.ma',
+  role: 'client',
+  createdAt: new Date().toISOString(),
+  profileImage: null,
+  phone: '+212 5XX-XXXX',
+  address: 'Casablanca, Maroc'
+};
 
 export class AuthService {
   /**
    * Login user with credentials
    */
   static async login(credentials: LoginCredentials): Promise<User> {
-    try {
-      const response = await fetchWithAuth(ENDPOINTS.AUTH.LOGIN, {
-        method: 'POST',
-        body: JSON.stringify(credentials)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Identifiants incorrects');
-      }
-      
-      const data = await response.json();
-      
-      // Store auth token in localStorage
-      if (data.token) {
-        localStorage.setItem('auth_token', data.token);
-      }
-      
-      return data.user;
-    } catch (error) {
-      console.error('Login failed:', error);
-      throw error;
-    }
+    return new Promise((resolve, reject) => {
+      // Simulate API call
+      setTimeout(() => {
+        // Check if credentials match demo account
+        if (credentials.username === 'demo' && credentials.password === 'demo123') {
+          // Store auth token in localStorage
+          localStorage.setItem('auth_token', 'demo-token-xyz-123');
+          localStorage.setItem('isAuthenticated', 'true');
+          resolve(demoUser);
+        } else {
+          reject(new Error('Identifiants incorrects'));
+        }
+      }, 800); // Simulate network delay
+    });
   }
   
   /**
    * Register new user
    */
   static async register(registrationData: RegistrationData): Promise<User> {
-    try {
-      const response = await fetchWithAuth(ENDPOINTS.AUTH.REGISTER, {
-        method: 'POST',
-        body: JSON.stringify(registrationData)
-      });
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Échec de l\'inscription');
-      }
-      
-      const data = await response.json();
-      return data.user;
-    } catch (error) {
-      console.error('Registration failed:', error);
-      throw error;
-    }
+    return new Promise((resolve, reject) => {
+      // Simulate API call
+      setTimeout(() => {
+        const newUser = {
+          ...demoUser,
+          name: registrationData.name,
+          email: registrationData.email
+        };
+        resolve(newUser);
+      }, 800); // Simulate network delay
+    });
   }
   
   /**
@@ -65,13 +59,8 @@ export class AuthService {
   static logout(): void {
     // Clear auth token
     localStorage.removeItem('auth_token');
-    
-    // Try to hit the logout endpoint if available
-    fetchWithAuth(ENDPOINTS.AUTH.LOGOUT, {
-      method: 'POST'
-    }).catch(error => {
-      console.error('Error during logout:', error);
-    });
+    localStorage.removeItem('isAuthenticated');
+    localStorage.removeItem('lastActivityTimestamp');
     
     // Force redirect to login page
     window.location.href = '/login';
@@ -81,20 +70,17 @@ export class AuthService {
    * Get current user profile information
    */
   static async getUserProfile(): Promise<User> {
-    try {
-      const response = await fetchWithAuth(ENDPOINTS.AUTH.PROFILE);
-      
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Impossible de récupérer le profil');
-      }
-      
-      const data = await response.json();
-      return data as User;
-    } catch (error) {
-      console.error('Failed to get user profile:', error);
-      throw error;
-    }
+    return new Promise((resolve, reject) => {
+      // Simulate API call
+      setTimeout(() => {
+        const token = localStorage.getItem('auth_token');
+        if (token) {
+          resolve(demoUser);
+        } else {
+          reject(new Error('Non autorisé'));
+        }
+      }, 500);
+    });
   }
   
   /**
@@ -108,8 +94,7 @@ export class AuthService {
     }
     
     try {
-      const user = await this.getUserProfile();
-      return user;
+      return await this.getUserProfile();
     } catch (error) {
       console.error('Auth check failed:', error);
       // Clear invalid token

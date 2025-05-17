@@ -14,9 +14,10 @@ const SessionTimeoutComponent: React.FC = () => {
     if (!isAuthenticated) return;
 
     const resetTimer = () => {
-      setLastActivity(Date.now());
+      const timestamp = Date.now();
+      setLastActivity(timestamp);
       // Sauvegarde du timestamp d'activité dans localStorage
-      localStorage.setItem('lastActivityTimestamp', Date.now().toString());
+      localStorage.setItem('lastActivityTimestamp', timestamp.toString());
     };
 
     // Initialisation avec une valeur stockée si elle existe
@@ -42,7 +43,7 @@ const SessionTimeoutComponent: React.FC = () => {
           description: "Votre session a expiré en raison d'inactivité. Veuillez vous reconnecter."
         });
       }
-    }, 60000);
+    }, 60000); // Vérifier chaque minute
 
     return () => {
       events.forEach(event => {
@@ -50,7 +51,7 @@ const SessionTimeoutComponent: React.FC = () => {
       });
       clearInterval(intervalId);
     };
-  }, [isAuthenticated, lastActivity, logout, navigate]);
+  }, [isAuthenticated, lastActivity, logout, navigate, timeoutDuration]);
 
   return null;
 };

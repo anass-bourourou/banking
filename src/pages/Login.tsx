@@ -12,8 +12,8 @@ import { AuthService } from '@/services/AuthService';
 import { BankLogo } from '@/components/auth/BankLogo';
 
 const Login = () => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
+  const [username, setUsername] = useState('demo');
+  const [password, setPassword] = useState('demo123');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -39,11 +39,7 @@ const Login = () => {
       let errorMessage = 'Identifiants incorrects, veuillez réessayer';
       
       if (error instanceof Error) {
-        if (error.message === 'Load failed') {
-          errorMessage = 'Erreur de connexion - Serveur indisponible, veuillez réessayer plus tard';
-        } else {
-          errorMessage = error.message;
-        }
+        errorMessage = error.message;
       }
       
       setError(errorMessage);
@@ -73,6 +69,11 @@ const Login = () => {
           <CardDescription>
             Entrez vos identifiants pour accéder à votre compte
           </CardDescription>
+          <div className="rounded-md bg-blue-50 p-3 text-sm">
+            <p className="font-medium">Compte démo</p>
+            <p>Utilisateur: <strong>demo</strong></p>
+            <p>Mot de passe: <strong>demo123</strong></p>
+          </div>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-4">
@@ -96,7 +97,7 @@ const Login = () => {
                   onClick={(e) => {
                     e.preventDefault();
                     toast.info("Réinitialisation du mot de passe", {
-                      description: "Un email a été envoyé avec les instructions",
+                      description: "Utilisez les identifiants de démo fournis.",
                     });
                   }}
                 >
