@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Bell, User, Settings, LogOut, Menu } from 'lucide-react';
 import { 
@@ -96,7 +97,7 @@ const Header: React.FC<HeaderProps> = ({ toggleSidebar, sidebarOpen }) => {
         >
           <Menu size={24} />
         </button>
-        <span className="text-lg font-semibold text-bank-primary">BankWise</span>
+        <span className="text-lg font-semibold text-bank-primary">CIH Bank</span>
       </div>
       
       <div className="ml-auto flex items-center space-x-4">

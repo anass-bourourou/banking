@@ -7,12 +7,13 @@ export type { User, LoginCredentials, RegistrationData } from './auth/types';
 const demoUser: User = {
   id: '1',
   name: 'Client Démo',
-  email: 'demo@bankwise.ma',
+  email: 'demo@cih.ma',
   role: 'client',
   createdAt: new Date().toISOString(),
   profileImage: null,
   phone: '+212 5XX-XXXX',
-  address: 'Casablanca, Maroc'
+  address: 'Casablanca, Maroc',
+  lastLogin: new Date().toISOString()
 };
 
 export class AuthService {

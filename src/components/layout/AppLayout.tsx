@@ -29,7 +29,7 @@ const AppLayout: React.FC<AppLayoutProps> = ({ children, showWelcomeMessage = tr
       
       if (!hasShownWelcome) {
         setTimeout(() => {
-          toast.success('Bienvenue sur BankWise', {
+          toast.success('Bienvenue sur CIH Bank', {
             description: 'Votre application bancaire personnelle',
             duration: 4000,
           });
